@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lumora — Feed</title>
+<link rel="stylesheet" href="css/shared.css"/>
+<style>
+/* ── FEED-SPECIFIC ──────────────────────────────── */
+.feed-wrap { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 28px; max-width: 1100px; margin: calc(60px + 20px) auto 80px; padding: 0 16px; }
+@media(max-width:1000px){ .feed-wrap{ grid-template-columns:1fr; } .feed-sidebar{ display:none; } }
+
+/* Sidebar profile */
+.sb-profile { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.sb-avatar { width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid var(--border); flex-shrink:0; }
+.sb-name  { font-weight:700; font-size:.9rem; }
+.sb-handle{ color:var(--text-sub); font-size:.8rem; margin-top:2px; }
+.sb-edit  { margin-left:auto; color:var(--blue); font-weight:700; font-size:.82rem; }
+.sb-stats { display:flex; gap:0; border-top:1px solid var(--border); padding-top:14px; }
+.sb-stat  { flex:1; text-align:center; }
+.sb-stat-num  { font-weight:800; font-size:1rem; }
+.sb-stat-label{ color:var(--text-sub); font-size:.72rem; margin-top:2px; }
+
+/* Suggestions */
+.sugg-item{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.sugg-item:last-child{ margin-bottom:0; }
+.sugg-avatar{ width:34px; height:34px; border-radius:50%; background:var(--grad); flex-shrink:0; }
+.sugg-info { flex:1; min-width:0; }
+.sugg-name { font-weight:700; font-size:.84rem; }
+.sugg-sub  { color:var(--text-sub); font-size:.76rem; }
+.sugg-follow-btn{ color:var(--blue); font-weight:700; font-size:.82rem; flex-shrink:0; }
+
+/* Trending tags */
+.trend-item{ display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); cursor:pointer; transition:color var(--trans); }
+.trend-item:last-child{ border-bottom:none; }
+.trend-item:hover{ color:var(--blue); }
+.trend-rank{ font-size:.72rem; font-weight:800; color:var(--text-sub); width:16px; text-align:center; }
+.trend-info{ flex:1; }
+.trend-name { font-weight:700; font-size:.85rem; }
+.trend-count{ font-size:.74rem; color:var(--text-sub); }
+
+/* Load more */
+.load-more-btn{
+  display:block; width:100%; padding:13px;
+  border:1.5px solid var(--border); border-radius:var(--radius);
+  font-weight:700; font-size:.9rem; color:var(--text-sub);
+  transition:all var(--trans); margin-top:8px; text-align:center;
+  background:var(--surface);
+}
+.load-more-btn:hover{ border-color:var(--accent); color:var(--accent); background:rgba(225,48,108,.04); }
+
+/* Filter bar */
+.filter-bar{
+  display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;
+  margin-bottom:20px; scrollbar-width:none;
+}
+.filter-bar::-webkit-scrollbar{ display:none; }
+.filter-pill{
+  flex-shrink:0; padding:7px 16px; border-radius:20px;
+  border:1.5px solid var(--border); font-size:.82rem; font-weight:700;
+  color:var(--text-sub); background:var(--surface);
+  transition:all var(--trans); cursor:pointer; white-space:nowrap;
+}
+.filter-pill:hover{ border-color:var(--text-sub); color:var(--text); }
+.filter-pill.active{ background:var(--text); color:var(--surface); border-color:var(--text); }
+</style>
+</head>
+<body>
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/api.js"></script>
+<!-- mockdata disabled -->
+<script>
+  requireAuth();
+  injectNavbar('feed');
+</script>
+
+<div class="feed-wrap">
+  <!-- FEED COLUMN -->
+  <div class="feed-col" id="feed-col">
+
+    <!-- Role welcome banner (injected by JS) -->
+    <div id="role-banner"></div>
+
+    <!-- Stories -->
+    <div class="stories-bar" id="stories-bar">
+      <div class="story-item story-add" onclick="openYourStory()" style="cursor:pointer">
+        <div class="story-ring"><div class="story-ring-inner">+</div></div>
+        <span class="story-name">Your Story</span>
+      </div>
+      <div id="stories-list" style="display:contents">
+        <!-- Stories loaded from API -->
+        <div class="story-item" style="flex-shrink:0">
+          <div class="skeleton" style="width:60px;height:60px;border-radius:50%"></div>
+          <div class="skeleton" style="width:50px;height:10px;margin-top:5px;border-radius:5px"></div>
+        </div>
+        <div class="story-item" style="flex-shrink:0">
+          <div class="skeleton" style="width:60px;height:60px;border-radius:50%"></div>
+          <div class="skeleton" style="width:50px;height:10px;margin-top:5px;border-radius:5px"></div>
+        </div>
+        <div class="story-item" style="flex-shrink:0">
+          <div class="skeleton" style="width:60px;height:60px;border-radius:50%"></div>
+          <div class="skeleton" style="width:50px;height:10px;margin-top:5px;border-radius:5px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Story upload input (hidden) -->
+    <input type="file" id="story-file-input" accept="image/*,video/*" style="display:none" onchange="previewStory(event)"/>
+
+    <!-- Story preview modal -->
+    <div class="modal-overlay" id="story-modal" style="display:none" onclick="closeStoryModal(event)">
+      <div class="modal" style="max-width:420px;padding:0;overflow:hidden;border-radius:18px">
+        <div style="position:relative;background:#000;min-height:300px;display:flex;align-items:center;justify-content:center" id="story-preview-wrap">
+          <img id="story-preview-img" style="max-width:100%;max-height:500px;display:none"/>
+          <video id="story-preview-vid" style="max-width:100%;max-height:500px;display:none" controls></video>
+          <div id="story-preview-placeholder" style="color:#666;font-size:.9rem">Select a photo or video</div>
+        </div>
+        <div style="padding:16px">
+          <input type="text" id="story-caption-input" placeholder="Add a caption… (optional)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:.9rem;outline:none;margin-bottom:12px"/>
+          <div style="display:flex;gap:10px">
+            <button style="flex:1;padding:11px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--text-sub);font-weight:700;font-size:.88rem;cursor:pointer" onclick="closeStoryModal()">Cancel</button>
+            <button style="flex:1;padding:11px;border-radius:8px;background:var(--grad);color:#fff;font-weight:700;font-size:.88rem;border:none;cursor:pointer" onclick="publishStory()">Share Story</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <button class="filter-pill active" onclick="setFeedFilter(this,'all')">All</button>
+      <button class="filter-pill" onclick="setFeedFilter(this,'following')">Following</button>
+      <button class="filter-pill" onclick="setFeedFilter(this,'trending')">🔥 Trending</button>
+      <button class="filter-pill" onclick="setFeedFilter(this,'travel')">✈️ Travel</button>
+      <button class="filter-pill" onclick="setFeedFilter(this,'nature')">🌿 Nature</button>
+      <button class="filter-pill" onclick="setFeedFilter(this,'urban')">🏙️ Urban</button>
+      <button class="filter-pill" onclick="setFeedFilter(this,'portrait')">🧑‍🎨 Portrait</button>
+    </div>
+
+    <!-- Feed cards -->
+    <div id="feed-cards">
+      <!-- Skeleton loading -->
+    </div>
+
+    <!-- Empty state (hidden until loaded with no results) -->
+    <div class="empty-state" id="feed-empty" style="display:none">
+      <div class="empty-icon">📷</div>
+      <div class="empty-title">No photos yet</div>
+      <div class="empty-desc">Be the first to share a photo or follow some creators to populate your feed.</div>
+      <a href="explore.html" class="btn-primary btn-sm">Explore Photos</a>
+    </div>
+
+    <button class="load-more-btn" id="load-more-btn" onclick="loadMorePhotos()" style="display:none">
+      Load more photos
+    </button>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar feed-sidebar">
+    <!-- Profile summary -->
+    <div class="sidebar-card">
+      <div class="sb-profile">
+        <div class="sb-avatar skeleton" id="sb-avatar" style="background:var(--border)"></div>
+        <div style="flex:1">
+          <div class="sb-name" id="sb-name"><div class="skeleton" style="width:100px;height:13px;border-radius:5px"></div></div>
+          <div class="sb-handle" id="sb-handle"><div class="skeleton" style="width:70px;height:10px;border-radius:5px;margin-top:5px"></div></div>
+        </div>
+        <a class="sb-edit" href="profile.html">Edit</a>
+      </div>
+      <div class="sb-stats">
+        <div class="sb-stat"><div class="sb-stat-num" id="sb-liked">—</div><div class="sb-stat-label">Liked</div></div>
+        <div class="sb-stat"><div class="sb-stat-num" id="sb-saved">—</div><div class="sb-stat-label">Saved</div></div>
+        <div class="sb-stat"><div class="sb-stat-num" id="sb-comments">—</div><div class="sb-stat-label">Comments</div></div>
+      </div>
+    </div>
+
+    <!-- Suggestions -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-title">Suggested Creators</div>
+      <div id="suggestions-list">
+        <div class="sugg-item"><div class="sugg-avatar skeleton"></div><div style="flex:1"><div class="skeleton" style="height:12px;width:80%;border-radius:5px;margin-bottom:5px"></div><div class="skeleton" style="height:10px;width:55%;border-radius:5px"></div></div></div>
+        <div class="sugg-item"><div class="sugg-avatar skeleton"></div><div style="flex:1"><div class="skeleton" style="height:12px;width:80%;border-radius:5px;margin-bottom:5px"></div><div class="skeleton" style="height:10px;width:55%;border-radius:5px"></div></div></div>
+        <div class="sugg-item"><div class="sugg-avatar skeleton"></div><div style="flex:1"><div class="skeleton" style="height:12px;width:80%;border-radius:5px;margin-bottom:5px"></div><div class="skeleton" style="height:10px;width:55%;border-radius:5px"></div></div></div>
+      </div>
+    </div>
+
+    <!-- Trending hashtags -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-title">Trending Hashtags</div>
+      <div id="trending-list">
+        <div class="trend-item"><div class="skeleton" style="height:12px;width:90%;border-radius:5px"></div></div>
+        <div class="trend-item"><div class="skeleton" style="height:12px;width:75%;border-radius:5px"></div></div>
+        <div class="trend-item"><div class="skeleton" style="height:12px;width:80%;border-radius:5px"></div></div>
+        <div class="trend-item"><div class="skeleton" style="height:12px;width:65%;border-radius:5px"></div></div>
+        <div class="trend-item"><div class="skeleton" style="height:12px;width:70%;border-radius:5px"></div></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+let feedPage = 1;
+let feedFilter = 'all';
+
+// Show skeletons immediately
+renderSkeletons(document.getElementById('feed-cards'), 3);
+
+// Load feed from API
+async function loadFeed(reset = false) {
+  if (reset) { feedPage = 1; }
+  try {
+    const params = `?filter=${feedFilter}&page=${feedPage}&limit=10`;
+    const data = await API.getPhotos(params);
+    renderFeed(data.photos || [], reset);
+    document.getElementById('load-more-btn').style.display = data.hasMore ? 'block' : 'none';
+  } catch {
+    renderFeed([], reset);
+    showToast('Feed loaded in preview mode — connect Azure backend to see real photos.', 'info');
+    document.getElementById('feed-empty').style.display = 'block';
+  }
+}
+
+function renderFeed(photos, reset) {
+  const container = document.getElementById('feed-cards');
+  if (reset) container.innerHTML = '';
+  if (photos.length === 0 && reset) {
+    document.getElementById('feed-empty').style.display = 'block';
+    return;
+  }
+  photos.forEach(p => { container.insertAdjacentHTML('beforeend', buildPhotoCard(p)); });
+}
+
+function loadMorePhotos() {
+  feedPage++;
+  loadFeed(false);
+}
+
+function setFeedFilter(btn, filter) {
+  document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  feedFilter = filter;
+  renderSkeletons(document.getElementById('feed-cards'), 3);
+  loadFeed(true);
+}
+
+// Load sidebar data
+async function loadSidebar() {
+  try {
+    const user = await API.me();
+    const likes = Object.keys(JSON.parse(localStorage.getItem('lm_likes')||'{}')).length;
+    const saves = Object.keys(JSON.parse(localStorage.getItem('lm_saves')||'{}')).length;
+    const avatarUrl = user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username||'U')}&background=e1306c&color=fff`;
+    const avatarEl = document.getElementById('sb-avatar');
+    avatarEl.classList.remove('skeleton');
+    avatarEl.innerHTML = `<img src="${avatarUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    document.getElementById('sb-name').textContent    = user.displayName || user.username;
+    document.getElementById('sb-handle').textContent  = '@' + (user.username || '');
+    document.getElementById('sb-liked').textContent   = likes;
+    document.getElementById('sb-saved').textContent   = saves;
+    document.getElementById('sb-comments').textContent = user.commentCount || 0;
+  } catch {
+    document.getElementById('sb-name').textContent   = 'Your Profile';
+    document.getElementById('sb-handle').textContent = '@username';
+    document.getElementById('sb-liked').textContent  = Object.keys(JSON.parse(localStorage.getItem('lm_likes')||'{}')).length;
+    document.getElementById('sb-saved').textContent  = Object.keys(JSON.parse(localStorage.getItem('lm_saves')||'{}')).length;
+    document.getElementById('sb-comments').textContent = 0;
+    document.getElementById('sb-avatar').classList.remove('skeleton');
+  }
+  loadTrending();
+}
+
+async function loadTrending() {
+  try {
+    const data = await API.trending();
+    const tags = data.hashtags || [];
+    document.getElementById('trending-list').innerHTML = tags.slice(0,6).map((t,i) => `
+      <div class="trend-item" onclick="searchTag('${t.name}')">
+        <div class="trend-rank">${i+1}</div>
+        <div class="trend-info">
+          <div class="trend-name">#${escapeHTML(t.name)}</div>
+          <div class="trend-count">${formatNum(t.count)} posts</div>
+        </div>
+        <span>${i < 2 ? '🔥' : '📈'}</span>
+      </div>`).join('');
+  } catch {
+    document.getElementById('trending-list').innerHTML = `<div style="color:var(--text-sub);font-size:.84rem;text-align:center;padding:10px">Connect backend to see trending tags</div>`;
+  }
+}
+
+// Load stories
+async function loadStories() {
+  try {
+    const data = await API.getStories();
+    const list = data.stories || [];
+    document.getElementById('stories-list').innerHTML = list.map(s => `
+      <div class="story-item" onclick="viewStory('${escapeHTML(s.id)}')" style="cursor:pointer;flex-shrink:0">
+        <div class="story-ring${s.hasNew ? '' : ' story-ring-seen'}">
+          <img src="${s.avatarUrl}" alt="${escapeHTML(s.username)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover"/>
+        </div>
+        <span class="story-name">${escapeHTML(s.username)}</span>
+      </div>`).join('');
+  } catch {
+    document.getElementById('stories-list').innerHTML = '';
+  }
+}
+
+// Load suggested creators into sidebar
+async function loadSuggestions() {
+  try {
+    const data = await (API.getSuggestions ? API.getSuggestions() : Promise.reject());
+    const users = data.users || [];
+    document.getElementById('suggestions-list').innerHTML = users.slice(0,4).map(u => `
+      <div class="sugg-item">
+        <img class="sugg-avatar" src="${u.avatarUrl}" alt="" style="object-fit:cover"/>
+        <div class="sugg-info">
+          <div class="sugg-name">${escapeHTML(u.username)}</div>
+          <div class="sugg-sub">${escapeHTML(u.sub || '')}</div>
+        </div>
+        <button class="sugg-follow-btn" onclick="this.textContent=this.textContent==='Follow'?'Following':'Follow'">Follow</button>
+      </div>`).join('');
+  } catch {
+    document.getElementById('suggestions-list').innerHTML = '<div style="color:var(--text-sub);font-size:.84rem;text-align:center;padding:8px">No suggestions yet</div>';
+  }
+}
+
+// Story functions
+function openYourStory() {
+  document.getElementById('story-file-input').click();
+}
+
+function previewStory(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = document.getElementById('story-preview-img');
+  const vid = document.getElementById('story-preview-vid');
+  const ph  = document.getElementById('story-preview-placeholder');
+  const url = URL.createObjectURL(file);
+  ph.style.display = 'none';
+  if (file.type.startsWith('video/')) {
+    img.style.display = 'none'; vid.style.display = 'block';
+    vid.src = url;
+  } else {
+    vid.style.display = 'none'; img.style.display = 'block';
+    img.src = url;
+  }
+  document.getElementById('story-modal').style.display = 'flex';
+}
+
+function closeStoryModal(e) {
+  if (e && e.target !== document.getElementById('story-modal')) return;
+  document.getElementById('story-modal').style.display = 'none';
+  document.getElementById('story-file-input').value = '';
+  document.getElementById('story-preview-img').style.display = 'none';
+  document.getElementById('story-preview-vid').style.display = 'none';
+  document.getElementById('story-preview-placeholder').style.display = 'block';
+}
+
+function publishStory() {
+  document.getElementById('story-modal').style.display = 'none';
+  showToast('📸 Story shared! (connects to Azure Blob when backend is live)', 'success');
+  document.getElementById('story-file-input').value = '';
+}
+
+function viewStory(id) {
+  showToast('👁 Story viewer — connects to Azure backend when live', 'info');
+}
+
+// Role welcome banner
+function renderRoleBanner() {
+  const user = JSON.parse(localStorage.getItem('lm_user') || '{}');
+  const name = user.displayName || user.username || 'there';
+  const banner = document.getElementById('role-banner');
+  if (isCreator()) {
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  background:var(--grad);border-radius:var(--radius);
+                  padding:14px 18px;margin-bottom:20px;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="color:#fff;font-weight:800;font-size:1rem">
+            📸 Welcome back, ${escapeHTML(name)}
+          </div>
+          <div style="color:rgba(255,255,255,.82);font-size:.82rem;margin-top:2px">
+            You are signed in as a <strong>Creator</strong> — you can upload and manage photos.
+          </div>
+        </div>
+        <a href="creator.html" style="background:rgba(255,255,255,.2);backdrop-filter:blur(4px);
+           color:#fff;font-weight:800;font-size:.84rem;padding:8px 16px;
+           border-radius:8px;white-space:nowrap;border:1.5px solid rgba(255,255,255,.35)">
+          + Upload Photo
+        </a>
+      </div>`;
+  } else {
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;
+                  background:rgba(0,149,246,.07);border:1.5px solid rgba(0,149,246,.2);
+                  border-radius:var(--radius);padding:14px 18px;margin-bottom:20px">
+        <span style="font-size:1.5rem">👤</span>
+        <div>
+          <div style="font-weight:800;font-size:.95rem;color:var(--blue)">
+            Welcome, ${escapeHTML(name)}
+          </div>
+          <div style="color:var(--text-sub);font-size:.82rem;margin-top:2px">
+            You are signed in as a <strong>Consumer</strong> — browse, like, comment and save photos.
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+// Init
+renderRoleBanner();
+loadFeed(true);
+loadSidebar();
+loadStories();
+loadSuggestions();
+</script>
+</body>
+</html>

@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lumora — Saved</title>
+<link rel="stylesheet" href="css/shared.css"/>
+<style>
+/* ── SAVED-SPECIFIC ──────────────────────────────── */
+.saved-wrap {
+  max-width: 1100px;
+  margin: calc(60px + 28px) auto 80px;
+  padding: 0 16px;
+}
+
+/* Page header */
+.saved-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.saved-header-left h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+.saved-header-left p {
+  color: var(--text-sub);
+  font-size: .88rem;
+  margin: 0;
+}
+.saved-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--accent);
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* Controls bar */
+.saved-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.saved-controls-left {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.saved-controls-left::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--text-sub);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all var(--trans);
+  white-space: nowrap;
+}
+.filter-chip:hover { border-color: var(--text-sub); color: var(--text); }
+.filter-chip.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+
+.sort-select {
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.view-btn {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-sub);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; cursor: pointer;
+  transition: all var(--trans);
+}
+.view-btn.active, .view-btn:hover {
+  background: var(--text);
+  color: var(--surface);
+  border-color: var(--text);
+}
+
+/* Collections bar */
+.collections-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.collection-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all var(--trans);
+  min-width: 140px;
+}
+.collection-card:hover, .collection-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(225,48,108,.12);
+}
+.collection-card.active { background: rgba(225,48,108,.06); }
+.collection-thumb {
+  width: 42px; height: 42px;
+  border-radius: 8px;
+  background: var(--grad);
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+}
+.collection-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.collection-info { min-width: 0; }
+.collection-name { font-weight: 700; font-size: .84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.collection-count { font-size: .74rem; color: var(--text-sub); margin-top: 1px; }
+.collection-add-btn {
+  border: 1.5px dashed var(--border);
+  background: transparent;
+  color: var(--text-sub);
+  font-size: .82rem;
+  font-weight: 700;
+  gap: 6px;
+  justify-content: center;
+}
+.collection-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Grid */
+.saved-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.saved-grid.grid-2col { grid-template-columns: repeat(2, 1fr); }
+.saved-grid.grid-1col { grid-template-columns: 1fr; }
+
+@media (max-width: 700px) {
+  .saved-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .saved-grid.grid-1col { grid-template-columns: 1fr; }
+  .collections-bar { gap: 8px; }
+  .collection-card { min-width: 120px; }
+}
+@media (max-width: 440px) {
+  .saved-grid { grid-template-columns: 1fr; }
+}
+
+/* Saved card */
+.saved-card {
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: transform var(--trans), box-shadow var(--trans);
+  position: relative;
+}
+.saved-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+.saved-card-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  background: var(--border);
+}
+.saved-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,.7) 100%);
+  opacity: 0;
+  transition: opacity var(--trans);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px;
+  cursor: pointer;
+}
+.saved-card:hover .saved-card-overlay { opacity: 1; }
+.saved-card-title {
+  color: #fff;
+  font-weight: 700;
+  font-size: .88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+.saved-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,.85);
+  font-size: .75rem;
+}
+.saved-card-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity var(--trans);
+}
+.saved-card:hover .saved-card-actions { opacity: 1; }
+.saved-action-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: .9rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background var(--trans);
+  border: none;
+}
+.saved-action-btn:hover { background: var(--accent); }
+.saved-action-btn.unsave-btn:hover { background: #e53e3e; }
+
+/* List view item */
+.saved-list-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: all var(--trans);
+  cursor: pointer;
+}
+.saved-list-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px rgba(225,48,108,.08);
+}
+.saved-list-thumb {
+  width: 72px; height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--border);
+}
+.saved-list-info { flex: 1; min-width: 0; }
+.saved-list-title {
+  font-weight: 700;
+  font-size: .92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+.saved-list-sub {
+  color: var(--text-sub);
+  font-size: .78rem;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.saved-list-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.saved-list-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: .78rem;
+  font-weight: 700;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all var(--trans);
+}
+.saved-list-btn:hover { border-color: var(--accent); color: var(--accent); }
+.saved-list-btn.danger:hover { border-color: #e53e3e; color: #e53e3e; }
+
+/* Stats strip */
+.saved-stats-strip {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.saved-stat-card {
+  flex: 1;
+  min-width: 130px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.saved-stat-num {
+  font-size: 1.4rem;
+  font-weight: 800;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.saved-stat-label {
+  font-size: .76rem;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+/* Empty state */
+.saved-empty {
+  text-align: center;
+  padding: 80px 20px;
+}
+.saved-empty-icon {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+  opacity: .6;
+}
+.saved-empty-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.saved-empty-desc {
+  color: var(--text-sub);
+  font-size: .9rem;
+  max-width: 380px;
+  margin: 0 auto 24px;
+  line-height: 1.5;
+}
+
+/* Unsave confirm modal */
+.unsave-modal-body {
+  padding: 12px 0;
+  color: var(--text-sub);
+  font-size: .9rem;
+  line-height: 1.5;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.btn-danger {
+  padding: 9px 20px;
+  border-radius: 8px;
+  background: #e53e3e;
+  color: #fff;
+  font-weight: 700;
+  font-size: .88rem;
+  border: none;
+  cursor: pointer;
+  transition: background var(--trans);
+}
+.btn-danger:hover { background: #c53030; }
+.btn-ghost {
+  padding: 9px 20px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-sub);
+  font-weight: 700;
+  font-size: .88rem;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all var(--trans);
+}
+.btn-ghost:hover { border-color: var(--text-sub); color: var(--text); }
+
+/* Load more */
+.load-more-btn {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--text-sub);
+  transition: all var(--trans);
+  margin-top: 16px;
+  text-align: center;
+  background: var(--surface);
+  cursor: pointer;
+}
+.load-more-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(225,48,108,.04); }
+</style>
+</head>
+<body>
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/api.js"></script>
+<!-- mockdata disabled -->
+<script>
+  requireAuth();
+  injectNavbar('saved');
+</script>
+
+<div class="saved-wrap">
+
+  <!-- Page header -->
+  <div class="saved-header">
+    <div class="saved-header-left">
+      <h1>Saved Photos <span class="saved-count-badge" id="header-count">0</span></h1>
+      <p>Your personal collection of bookmarked photos</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-primary btn-sm" onclick="openNewCollectionModal()">+ New Collection</button>
+    </div>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="saved-stats-strip">
+    <div class="saved-stat-card">
+      <div class="saved-stat-num" id="stat-total">0</div>
+      <div class="saved-stat-label">Total Saved</div>
+    </div>
+    <div class="saved-stat-card">
+      <div class="saved-stat-num" id="stat-collections">1</div>
+      <div class="saved-stat-label">Collections</div>
+    </div>
+    <div class="saved-stat-card">
+      <div class="saved-stat-num" id="stat-creators">0</div>
+      <div class="saved-stat-label">Creators Saved From</div>
+    </div>
+    <div class="saved-stat-card">
+      <div class="saved-stat-num" id="stat-recent">—</div>
+      <div class="saved-stat-label">Last Saved</div>
+    </div>
+  </div>
+
+  <!-- Collections bar -->
+  <div class="collections-bar" id="collections-bar">
+    <div class="collection-card active" data-collection="all" onclick="selectCollection('all', this)">
+      <div class="collection-thumb">🔖</div>
+      <div class="collection-info">
+        <div class="collection-name">All Saved</div>
+        <div class="collection-count" id="col-all-count">0 photos</div>
+      </div>
+    </div>
+    <div class="collection-card collection-add-btn" onclick="openNewCollectionModal()">
+      <span style="font-size:1.2rem">+</span>
+      <span>New Collection</span>
+    </div>
+  </div>
+
+  <!-- Controls bar -->
+  <div class="saved-controls">
+    <div class="saved-controls-left">
+      <button class="filter-chip active" onclick="setSavedFilter(this,'all')">All</button>
+      <button class="filter-chip" onclick="setSavedFilter(this,'travel')">✈️ Travel</button>
+      <button class="filter-chip" onclick="setSavedFilter(this,'nature')">🌿 Nature</button>
+      <button class="filter-chip" onclick="setSavedFilter(this,'urban')">🏙️ Urban</button>
+      <button class="filter-chip" onclick="setSavedFilter(this,'portrait')">🧑‍🎨 Portrait</button>
+      <button class="filter-chip" onclick="setSavedFilter(this,'abstract')">🎨 Abstract</button>
+    </div>
+    <select class="sort-select" id="sort-select" onchange="sortSaved(this.value)">
+      <option value="newest">Newest saved</option>
+      <option value="oldest">Oldest saved</option>
+      <option value="most_liked">Most liked</option>
+      <option value="highest_rated">Highest rated</option>
+      <option value="title">Title A–Z</option>
+    </select>
+    <div class="view-toggle">
+      <button class="view-btn active" id="view-grid3" onclick="setView('grid3', this)" title="3-column grid">⊞</button>
+      <button class="view-btn" id="view-grid2" onclick="setView('grid2', this)" title="2-column grid">▦</button>
+      <button class="view-btn" id="view-list" onclick="setView('list', this)" title="List view">☰</button>
+    </div>
+  </div>
+
+  <!-- Grid / List container -->
+  <div id="saved-container" class="saved-grid">
+    <!-- Skeleton loading -->
+  </div>
+
+  <!-- Empty state -->
+  <div class="saved-empty" id="saved-empty" style="display:none">
+    <div class="saved-empty-icon">🔖</div>
+    <div class="saved-empty-title">Nothing saved yet</div>
+    <div class="saved-empty-desc">
+      Tap the bookmark icon on any photo to save it here. Your saved photos stay private — only you can see them.
+    </div>
+    <a href="explore.html" class="btn-primary">Explore Photos</a>
+  </div>
+
+  <!-- Load more -->
+  <button class="load-more-btn" id="load-more-btn" onclick="loadMoreSaved()" style="display:none">
+    Load more saved photos
+  </button>
+</div>
+
+<!-- Unsave confirm modal -->
+<div class="modal-overlay" id="unsave-modal" style="display:none" onclick="closeUnsaveModal(event)">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">Remove from saved?</span>
+      <button class="modal-close" onclick="closeUnsaveModal()">✕</button>
+    </div>
+    <div class="unsave-modal-body">
+      This photo will be removed from your saved collection. You can always save it again later.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeUnsaveModal()">Cancel</button>
+      <button class="btn-danger" onclick="confirmUnsave()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- New collection modal -->
+<div class="modal-overlay" id="collection-modal" style="display:none" onclick="closeCollectionModal(event)">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">New Collection</span>
+      <button class="modal-close" onclick="closeCollectionModal()">✕</button>
+    </div>
+    <div style="padding:4px 0 8px">
+      <label class="form-label">Collection Name</label>
+      <input class="form-input" id="col-name-input" type="text" placeholder="e.g. Travel Inspo, Architecture…" maxlength="40" oninput="updateColPreview()"/>
+      <div style="margin-top:12px">
+        <label class="form-label">Icon</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px" id="icon-picker">
+          <span class="icon-opt active" data-icon="🗂️" onclick="pickIcon(this)">🗂️</span>
+          <span class="icon-opt" data-icon="✈️" onclick="pickIcon(this)">✈️</span>
+          <span class="icon-opt" data-icon="🌿" onclick="pickIcon(this)">🌿</span>
+          <span class="icon-opt" data-icon="🏙️" onclick="pickIcon(this)">🏙️</span>
+          <span class="icon-opt" data-icon="🎨" onclick="pickIcon(this)">🎨</span>
+          <span class="icon-opt" data-icon="🍔" onclick="pickIcon(this)">🍔</span>
+          <span class="icon-opt" data-icon="🐾" onclick="pickIcon(this)">🐾</span>
+          <span class="icon-opt" data-icon="⭐" onclick="pickIcon(this)">⭐</span>
+          <span class="icon-opt" data-icon="💡" onclick="pickIcon(this)">💡</span>
+          <span class="icon-opt" data-icon="🌅" onclick="pickIcon(this)">🌅</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeCollectionModal()">Cancel</button>
+      <button class="btn-primary" onclick="createCollection()">Create</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.icon-opt {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; cursor: pointer;
+  transition: all var(--trans);
+}
+.icon-opt:hover, .icon-opt.active { border-color: var(--accent); background: rgba(225,48,108,.08); }
+</style>
+
+<script>
+// ── State ────────────────────────────────────────────
+let currentView       = 'grid3';
+let currentFilter     = 'all';
+let currentSort       = 'newest';
+let currentCollection = 'all';
+let savedPage         = 1;
+let pendingUnsaveId   = null;
+let allSavedPhotos    = [];  // full list in memory for client-side ops
+let collections       = JSON.parse(localStorage.getItem('lm_collections') || '[]');
+let selectedIcon      = '🗂️';
+
+// ── Init ─────────────────────────────────────────────
+renderSkeletonSaved();
+loadSaved(true);
+renderCollections();
+
+// ── Skeleton helpers ─────────────────────────────────
+function renderSkeletonSaved() {
+  const c = document.getElementById('saved-container');
+  c.className = 'saved-grid';
+  c.innerHTML = Array.from({length: 6}, () => `
+    <div class="saved-card">
+      <div class="skeleton" style="width:100%;aspect-ratio:1/1"></div>
+    </div>`).join('');
+}
+
+// ── Load saved photos ─────────────────────────────────
+async function loadSaved(reset = false) {
+  if (reset) { savedPage = 1; allSavedPhotos = []; }
+
+  try {
+    const params = `?sort=${currentSort}&filter=${currentFilter}&page=${savedPage}&limit=18`;
+    const data   = await API.getSaved(params);
+    const photos = data.photos || [];
+    if (reset) allSavedPhotos = photos;
+    else allSavedPhotos = allSavedPhotos.concat(photos);
+
+    renderSaved(photos, reset);
+    document.getElementById('load-more-btn').style.display = data.hasMore ? 'block' : 'none';
+    updateStats();
+  } catch {
+    // Fallback: read save state from localStorage
+    const ids = Object.keys(JSON.parse(localStorage.getItem('lm_saves') || '{}'));
+    if (ids.length === 0) {
+      document.getElementById('saved-container').innerHTML = '';
+      document.getElementById('saved-empty').style.display = 'block';
+    } else {
+      document.getElementById('saved-container').innerHTML = '';
+      document.getElementById('saved-empty').style.display = 'block';
+      showToast('Connect Azure backend to view your saved photos.', 'info');
+    }
+    document.getElementById('header-count').textContent = ids.length;
+    document.getElementById('stat-total').textContent   = ids.length;
+    document.getElementById('col-all-count').textContent = `${ids.length} photo${ids.length !== 1 ? 's' : ''}`;
+  }
+}
+
+// ── Render ────────────────────────────────────────────
+function renderSaved(photos, reset) {
+  const container = document.getElementById('saved-container');
+  if (reset) container.innerHTML = '';
+
+  if (photos.length === 0 && reset) {
+    document.getElementById('saved-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('saved-empty').style.display = 'none';
+
+  const html = photos.map(p => currentView === 'list' ? buildListItem(p) : buildSavedCard(p));
+  container.insertAdjacentHTML('beforeend', html.join(''));
+  applyView();
+}
+
+function buildSavedCard(p) {
+  const imgSrc = p.cdnUrl || p.thumbnailUrl || p.imageUrl || '';
+  const title  = escapeHTML(p.title || 'Untitled');
+  const likes  = formatNum(p.likeCount || 0);
+  const rating = p.avgRating ? `⭐ ${parseFloat(p.avgRating).toFixed(1)}` : '';
+
+  return `
+  <div class="saved-card" id="sc-${escapeHTML(p.id)}">
+    ${imgSrc ? `<img class="saved-card-img" src="${imgSrc}" alt="${title}" loading="lazy" onerror="this.style.background='var(--border)';this.src=''" onclick="viewPhoto('${escapeHTML(p.id)}')"/>` : `<div class="saved-card-img" style="background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:2rem">📷</div>`}
+    <div class="saved-card-overlay" onclick="viewPhoto('${escapeHTML(p.id)}')">
+      <div class="saved-card-title">${title}</div>
+      <div class="saved-card-meta">
+        <span>❤️ ${likes}</span>
+        ${rating ? `<span>${rating}</span>` : ''}
+        ${p.username ? `<span>@${escapeHTML(p.username)}</span>` : ''}
+      </div>
+    </div>
+    <div class="saved-card-actions">
+      <button class="saved-action-btn" onclick="viewPhoto('${escapeHTML(p.id)}')" title="View photo">👁</button>
+      <button class="saved-action-btn unsave-btn" onclick="promptUnsave('${escapeHTML(p.id)}', event)" title="Remove from saved">🔖</button>
+    </div>
+  </div>`;
+}
+
+function buildListItem(p) {
+  const imgSrc = p.cdnUrl || p.thumbnailUrl || p.imageUrl || '';
+  const title  = escapeHTML(p.title || 'Untitled');
+  const likes  = formatNum(p.likeCount || 0);
+  const time   = p.savedAt ? timeAgo(p.savedAt) : (p.createdAt ? timeAgo(p.createdAt) : '');
+
+  return `
+  <div class="saved-list-item" id="sc-${escapeHTML(p.id)}">
+    ${imgSrc
+      ? `<img class="saved-list-thumb" src="${imgSrc}" alt="${title}" loading="lazy" onclick="viewPhoto('${escapeHTML(p.id)}')" onerror="this.style.background='var(--border)';this.src=''"/>`
+      : `<div class="saved-list-thumb" style="background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:1.4rem">📷</div>`}
+    <div class="saved-list-info">
+      <div class="saved-list-title">${title}</div>
+      <div class="saved-list-sub">
+        ${p.username ? `<span>@${escapeHTML(p.username)}</span>` : ''}
+        <span>❤️ ${likes}</span>
+        ${time ? `<span>Saved ${time}</span>` : ''}
+        ${p.category ? `<span>${escapeHTML(p.category)}</span>` : ''}
+      </div>
+    </div>
+    <div class="saved-list-actions">
+      <button class="saved-list-btn" onclick="viewPhoto('${escapeHTML(p.id)}')">View</button>
+      <button class="saved-list-btn danger" onclick="promptUnsave('${escapeHTML(p.id)}', event)">Remove</button>
+    </div>
+  </div>`;
+}
+
+// ── View switching ────────────────────────────────────
+function setView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  rebuildView();
+}
+
+function applyView() {
+  const c = document.getElementById('saved-container');
+  c.className = currentView === 'grid3' ? 'saved-grid'
+              : currentView === 'grid2' ? 'saved-grid grid-2col'
+              : 'saved-grid grid-1col';
+}
+
+function rebuildView() {
+  renderSaved(allSavedPhotos, true);
+}
+
+// ── Filter / Sort ─────────────────────────────────────
+function setSavedFilter(btn, filter) {
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = filter;
+  renderSkeletonSaved();
+  loadSaved(true);
+}
+
+function sortSaved(val) {
+  currentSort = val;
+  renderSkeletonSaved();
+  loadSaved(true);
+}
+
+// ── Load more ─────────────────────────────────────────
+function loadMoreSaved() {
+  savedPage++;
+  loadSaved(false);
+}
+
+// ── Navigation ────────────────────────────────────────
+function viewPhoto(id) {
+  window.location.href = `photo.html?id=${encodeURIComponent(id)}`;
+}
+
+// ── Unsave flow ───────────────────────────────────────
+function promptUnsave(id, e) {
+  if (e) e.stopPropagation();
+  pendingUnsaveId = id;
+  document.getElementById('unsave-modal').style.display = 'flex';
+}
+
+function closeUnsaveModal(e) {
+  if (e && e.target !== document.getElementById('unsave-modal')) return;
+  document.getElementById('unsave-modal').style.display = 'none';
+  pendingUnsaveId = null;
+}
+
+async function confirmUnsave() {
+  if (!pendingUnsaveId) return;
+  const id = pendingUnsaveId;
+  closeUnsaveModal();
+
+  // Optimistic remove
+  const el = document.getElementById(`sc-${id}`);
+  if (el) { el.style.opacity = '0'; el.style.transform = 'scale(.9)'; setTimeout(() => el.remove(), 250); }
+
+  // Update localStorage
+  SaveState.remove(id);
+  allSavedPhotos = allSavedPhotos.filter(p => p.id !== id);
+  updateStats();
+
+  // Call API
+  try {
+    await API.toggleSave(id);
+    showToast('Removed from saved.', 'success');
+  } catch {
+    showToast('Removed locally — sync when backend is connected.', 'info');
+  }
+
+  // Show empty state if nothing left
+  if (document.getElementById('saved-container').children.length === 0) {
+    document.getElementById('saved-empty').style.display = 'block';
+  }
+}
+
+// ── Stats ─────────────────────────────────────────────
+function updateStats() {
+  const total = allSavedPhotos.length || Object.keys(JSON.parse(localStorage.getItem('lm_saves') || '{}')).length;
+  const creators = new Set(allSavedPhotos.map(p => p.username).filter(Boolean)).size;
+  const last = allSavedPhotos[0];
+
+  document.getElementById('header-count').textContent     = total;
+  document.getElementById('stat-total').textContent       = total;
+  document.getElementById('stat-creators').textContent    = creators;
+  document.getElementById('stat-recent').textContent      = last && last.savedAt ? timeAgo(last.savedAt) : '—';
+  document.getElementById('col-all-count').textContent    = `${total} photo${total !== 1 ? 's' : ''}`;
+  document.getElementById('stat-collections').textContent = collections.length + 1; // +1 for "All"
+}
+
+// ── Collections ───────────────────────────────────────
+function renderCollections() {
+  const bar = document.getElementById('collections-bar');
+  // Remove existing user collections (keep first "All" card and last "Add" button)
+  bar.querySelectorAll('[data-collection]').forEach(el => { if (el.dataset.collection !== 'all') el.remove(); });
+
+  collections.forEach(col => {
+    const div = document.createElement('div');
+    div.className = 'collection-card';
+    div.dataset.collection = col.id;
+    div.onclick = () => selectCollection(col.id, div);
+    div.innerHTML = `
+      <div class="collection-thumb">${col.icon}</div>
+      <div class="collection-info">
+        <div class="collection-name">${escapeHTML(col.name)}</div>
+        <div class="collection-count">0 photos</div>
+      </div>`;
+    bar.querySelector('.collection-add-btn').before(div);
+  });
+}
+
+function selectCollection(id, el) {
+  document.querySelectorAll('[data-collection]').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentCollection = id;
+  renderSkeletonSaved();
+  loadSaved(true);
+}
+
+function openNewCollectionModal() {
+  selectedIcon = '🗂️';
+  document.getElementById('col-name-input').value = '';
+  document.querySelectorAll('.icon-opt').forEach(o => o.classList.remove('active'));
+  document.querySelector('.icon-opt[data-icon="🗂️"]').classList.add('active');
+  document.getElementById('collection-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('col-name-input').focus(), 100);
+}
+
+function closeCollectionModal(e) {
+  if (e && e.target !== document.getElementById('collection-modal')) return;
+  document.getElementById('collection-modal').style.display = 'none';
+}
+
+function pickIcon(el) {
+  document.querySelectorAll('.icon-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  selectedIcon = el.dataset.icon;
+}
+
+function createCollection() {
+  const name = document.getElementById('col-name-input').value.trim();
+  if (!name) { showToast('Please enter a collection name.', 'error'); return; }
+
+  const col = { id: 'col_' + Date.now(), name, icon: selectedIcon };
+  collections.push(col);
+  localStorage.setItem('lm_collections', JSON.stringify(collections));
+  renderCollections();
+  updateStats();
+  closeCollectionModal();
+  showToast(`Collection "${name}" created.`, 'success');
+}
+</script>
+</body>
+</html>

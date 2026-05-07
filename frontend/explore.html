@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lumora — Explore</title>
+<link rel="stylesheet" href="css/shared.css"/>
+<style>
+.explore-wrap { max-width: 1200px; margin: calc(60px + 20px) auto 80px; padding: 0 16px; }
+
+/* Search hero */
+.search-hero { text-align: center; padding: 32px 0 28px; }
+.search-hero h1 { font-size: clamp(1.6rem,3vw,2.2rem); font-weight:900; letter-spacing:-.02em; margin-bottom:8px; }
+.search-hero p  { color: var(--text-sub); font-size:.95rem; margin-bottom:24px; }
+.search-big {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: 16px; padding: 12px 18px;
+  max-width: 600px; margin: 0 auto;
+  transition: border-color var(--trans), box-shadow var(--trans);
+}
+.search-big:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(225,48,108,.08); }
+.search-big input {
+  flex: 1; border: none; background: none; outline: none;
+  font-size: 1rem; color: var(--text);
+}
+.search-big input::placeholder { color: var(--text-light); }
+.search-clear { color: var(--text-sub); font-size: 1.1rem; cursor: pointer; display: none; }
+.search-clear.show { display: block; }
+
+/* Filters */
+.filter-section { margin-bottom: 24px; }
+.filter-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; align-items: center; }
+.filter-row::-webkit-scrollbar { display: none; }
+.filter-label { font-size: .78rem; font-weight: 800; color: var(--text-sub); white-space: nowrap; letter-spacing: .5px; text-transform: uppercase; margin-right: 4px; }
+.sort-select {
+  padding: 7px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: .82rem; font-weight: 700;
+  outline: none; cursor: pointer; -webkit-appearance: none;
+}
+
+/* Results meta */
+.results-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; min-height: 28px; }
+.results-count { font-size: .88rem; color: var(--text-sub); }
+.results-count strong { color: var(--text); }
+.view-toggle { display: flex; gap: 4px; }
+.view-btn { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-sub); transition: all var(--trans); }
+.view-btn:hover, .view-btn.active { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+/* Masonry */
+.masonry-3 { columns: 3; column-gap: 8px; }
+.masonry-2 { columns: 2; column-gap: 8px; }
+.masonry-1 { columns: 1; }
+.masonry-card {
+  break-inside: avoid; margin-bottom: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; cursor: pointer;
+  transition: transform var(--trans), box-shadow var(--trans);
+}
+.masonry-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+.masonry-card-img { position: relative; overflow: hidden; }
+.masonry-card-img img { width: 100%; display: block; transition: transform .35s ease; }
+.masonry-card:hover .masonry-card-img img { transform: scale(1.04); }
+.masonry-card-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,.42);
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  opacity: 0; transition: opacity .2s ease; color: #fff; font-weight: 700; font-size: .88rem;
+}
+.masonry-card:hover .masonry-card-overlay { opacity: 1; }
+.mc-stat { display: flex; align-items: center; gap: 5px; }
+.masonry-card-body { padding: 10px 12px; }
+.mc-title { font-weight: 700; font-size: .88rem; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-meta  { font-size: .76rem; color: var(--text-sub); display: flex; align-items: center; gap: 6px; }
+
+/* Hashtag results banner */
+.tag-banner {
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg,rgba(225,48,108,.08),rgba(131,58,180,.08));
+  border: 1px solid rgba(225,48,108,.2); border-radius: var(--radius);
+  padding: 14px 18px; margin-bottom: 20px;
+}
+.tag-banner-icon { font-size: 1.6rem; }
+.tag-banner-title { font-weight: 800; font-size: 1rem; }
+.tag-banner-sub   { font-size: .82rem; color: var(--text-sub); }
+
+/* Skeleton masonry */
+.skel-masonry-item { break-inside: avoid; margin-bottom: 8px; border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); }
+.skel-masonry-img  { width: 100%; }
+
+/* No results */
+.no-results { text-align: center; padding: 60px 20px; }
+
+@media(max-width:900px) { .masonry-3,.masonry-2 { columns: 2; } }
+@media(max-width:500px) { .masonry-3,.masonry-2,.masonry-1 { columns: 1; } }
+</style>
+</head>
+<body>
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/api.js"></script>
+<!-- mockdata disabled -->
+<script> requireAuth(); injectNavbar('explore'); </script>
+
+<div class="explore-wrap">
+  <!-- Search hero -->
+  <div class="search-hero">
+    <h1>Explore <span class="grad-text">Lumora</span></h1>
+    <p>Discover photos by title, location, hashtag or person</p>
+    <div class="search-big" id="search-box">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text-sub);flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="Search photos, #hashtags, locations…"
+             oninput="onSearchInput(this.value)" onkeydown="onSearchKey(event)"/>
+      <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+
+  <!-- Tag banner (shown when browsing a hashtag) -->
+  <div class="tag-banner" id="tag-banner" style="display:none">
+    <div class="tag-banner-icon">#</div>
+    <div>
+      <div class="tag-banner-title" id="tag-banner-title"></div>
+      <div class="tag-banner-sub"  id="tag-banner-sub"></div>
+    </div>
+    <button style="margin-left:auto;color:var(--text-sub)" onclick="clearTag()">✕ Clear</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-section">
+    <div class="filter-row">
+      <span class="filter-label">Category:</span>
+      <button class="chip active" onclick="setCategory(this,'')">All</button>
+      <button class="chip" onclick="setCategory(this,'travel')">✈️ Travel</button>
+      <button class="chip" onclick="setCategory(this,'nature')">🌿 Nature</button>
+      <button class="chip" onclick="setCategory(this,'urban')">🏙️ Urban</button>
+      <button class="chip" onclick="setCategory(this,'portrait')">🧑‍🎨 Portrait</button>
+      <button class="chip" onclick="setCategory(this,'food')">🍜 Food</button>
+      <button class="chip" onclick="setCategory(this,'architecture')">🏛️ Architecture</button>
+      <button class="chip" onclick="setCategory(this,'night')">🌙 Night</button>
+      <button class="chip" onclick="setCategory(this,'sport')">⚽ Sport</button>
+    </div>
+  </div>
+
+  <!-- Results meta bar -->
+  <div class="results-meta">
+    <div class="results-count" id="results-count"></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <select class="sort-select" id="sort-select" onchange="onSortChange()">
+        <option value="trending">🔥 Trending</option>
+        <option value="newest">🆕 Newest</option>
+        <option value="top_rated">⭐ Top Rated</option>
+        <option value="most_liked">❤️ Most Liked</option>
+      </select>
+      <div class="view-toggle">
+        <button class="view-btn active" id="view-3" onclick="setView(3)" title="3 columns">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="6" y="0" width="4" height="4" rx="1"/><rect x="12" y="0" width="4" height="4" rx="1"/><rect x="0" y="6" width="4" height="4" rx="1"/><rect x="6" y="6" width="4" height="4" rx="1"/><rect x="12" y="6" width="4" height="4" rx="1"/><rect x="0" y="12" width="4" height="4" rx="1"/><rect x="6" y="12" width="4" height="4" rx="1"/><rect x="12" y="12" width="4" height="4" rx="1"/></svg>
+        </button>
+        <button class="view-btn" id="view-2" onclick="setView(2)" title="2 columns">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="0" y="0" width="7" height="7" rx="1"/><rect x="9" y="0" width="7" height="7" rx="1"/><rect x="0" y="9" width="7" height="7" rx="1"/><rect x="9" y="9" width="7" height="7" rx="1"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div id="explore-grid" class="masonry-3"></div>
+
+  <!-- Load more -->
+  <div style="text-align:center;margin-top:24px">
+    <button id="explore-load-more" onclick="loadMoreExplore()" style="display:none"
+      class="btn-outline" style="margin:0 auto">Load more</button>
+  </div>
+</div>
+
+<!-- PHOTO DETAIL MODAL -->
+<div class="modal-overlay" id="photo-modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-inner">
+    <div style="position:relative;background:#000;display:flex;align-items:center;justify-content:center">
+      <img id="modal-img" src="" alt="" style="width:100%;max-height:90vh;object-fit:contain"/>
+      <button class="modal-close-btn" onclick="document.getElementById('photo-modal').classList.remove('open')">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;overflow:hidden">
+      <div style="padding:16px;border-bottom:1px solid var(--border)">
+        <div style="font-weight:700;font-size:1rem" id="modal-title"></div>
+        <div style="color:var(--text-sub);font-size:.84rem;margin-top:3px" id="modal-meta"></div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:14px 16px" id="modal-body">
+        <div id="modal-caption" style="font-size:.88rem;line-height:1.6;margin-bottom:12px"></div>
+        <div id="modal-people" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center">
+        <button class="action-btn" id="modal-like-btn" onclick="modalLike()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span id="modal-like-count">0</span>
+        </button>
+        <a id="modal-fullpage-link" href="#" class="btn-blue btn-sm" style="margin-left:auto">View Full Page →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let exploreState = { q:'', category:'', sort:'trending', page:1, cols:3 };
+let currentModalId = null;
+
+// ── SEARCH ────────────────────────────────────────
+const debouncedSearch = debounce(runExplore, 400);
+function onSearchInput(val) {
+  document.getElementById('search-clear').classList.toggle('show', val.length > 0);
+  exploreState.q = val;
+  exploreState.page = 1;
+  debouncedSearch();
+}
+function onSearchKey(e) { if (e.key === 'Enter') runExplore(); }
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').classList.remove('show');
+  exploreState.q = '';
+  exploreState.page = 1;
+  runExplore();
+}
+
+// ── TAG / CATEGORY / SORT ─────────────────────────
+function setCategory(btn, cat) {
+  document.querySelectorAll('.filter-section .chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  exploreState.category = cat;
+  exploreState.page = 1;
+  runExplore();
+}
+function onSortChange() {
+  exploreState.sort = document.getElementById('sort-select').value;
+  exploreState.page = 1;
+  runExplore();
+}
+function clearTag() {
+  document.getElementById('tag-banner').style.display = 'none';
+  exploreState.q = '';
+  document.getElementById('search-input').value = '';
+  runExplore();
+}
+function setView(cols) {
+  exploreState.cols = cols;
+  const grid = document.getElementById('explore-grid');
+  grid.className = cols === 3 ? 'masonry-3' : cols === 2 ? 'masonry-2' : 'masonry-1';
+  document.getElementById('view-3').classList.toggle('active', cols === 3);
+  document.getElementById('view-2').classList.toggle('active', cols === 2);
+}
+
+// ── LOAD EXPLORE ──────────────────────────────────
+function showSkeletonMasonry(grid) {
+  const heights = [220,280,180,300,240,200,260,190,310];
+  grid.innerHTML = heights.map(h => `
+    <div class="skel-masonry-item">
+      <div class="skeleton skel-masonry-img" style="height:${h}px"></div>
+      <div style="padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+        <div class="skeleton" style="height:12px;width:70%;border-radius:5px"></div>
+        <div class="skeleton" style="height:10px;width:45%;border-radius:5px"></div>
+      </div>
+    </div>`).join('');
+}
+
+async function runExplore(append = false) {
+  const grid = document.getElementById('explore-grid');
+  if (!append) showSkeletonMasonry(grid);
+  try {
+    const params = new URLSearchParams({
+      q: exploreState.q,
+      category: exploreState.category,
+      sort: exploreState.sort,
+      page: exploreState.page,
+      limit: 12,
+    });
+    const data = await API.getPhotos('?' + params.toString());
+    renderExploreGrid(data.photos || [], append);
+    const total = data.total || 0;
+    document.getElementById('results-count').innerHTML = `<strong>${total.toLocaleString()}</strong> photos found`;
+    document.getElementById('explore-load-more').style.display = data.hasMore ? 'block' : 'none';
+  } catch {
+    renderExploreGrid([], append);
+    document.getElementById('results-count').innerHTML = `Connect Azure backend to see results`;
+    if (!append) grid.innerHTML = `
+      <div class="no-results" style="column-span:all">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">Ready to explore</div>
+        <div class="empty-desc">Photos will appear here once the Azure backend is connected.</div>
+      </div>`;
+  }
+}
+
+function renderExploreGrid(photos, append) {
+  const grid = document.getElementById('explore-grid');
+  if (!append) grid.innerHTML = '';
+  if (photos.length === 0 && !append) return;
+  photos.forEach(p => {
+    const saved = SaveState.isSaved(p.id);
+    const card = document.createElement('div');
+    card.className = 'masonry-card';
+    card.onclick = () => openModal(p);
+    card.innerHTML = `
+      <div class="masonry-card-img">
+        <img src="${p.imageUrl||p.thumbnailUrl}" alt="${escapeHTML(p.title||'')}" loading="lazy"/>
+        <div class="masonry-card-overlay">
+          <div class="mc-stat">❤️ ${formatNum(p.likes||0)}</div>
+          <div class="mc-stat">💬 ${formatNum(p.commentCount||0)}</div>
+        </div>
+        <button style="position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.7rem" onclick="event.stopPropagation();toggleSave('${p.id}',event)">${saved?'🔖':'🏷️'}</button>
+      </div>
+      <div class="masonry-card-body">
+        <div class="mc-title">${escapeHTML(p.title||'Untitled')}</div>
+        <div class="mc-meta">
+          ${p.location ? `<span>📍 ${escapeHTML(p.location)}</span>` : ''}
+          <span>${timeAgo(p.createdAt||new Date())}</span>
+          <span>⭐ ${(p.avgRating||0).toFixed(1)}</span>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function loadMoreExplore() {
+  exploreState.page++;
+  runExplore(true);
+}
+
+// ── MODAL ─────────────────────────────────────────
+function openModal(photo) {
+  currentModalId = photo.id;
+  document.getElementById('modal-img').src    = photo.imageUrl || photo.thumbnailUrl;
+  document.getElementById('modal-title').textContent = photo.title || 'Untitled';
+  document.getElementById('modal-meta').textContent  = [photo.location, photo.creatorUsername].filter(Boolean).join(' · ');
+  document.getElementById('modal-caption').innerHTML = parseHashtags(escapeHTML(photo.caption||''));
+  document.getElementById('modal-like-count').textContent = formatNum(photo.likes||0);
+  document.getElementById('modal-fullpage-link').href = `photo.html?id=${photo.id}`;
+  const liked = LikeState.isLiked(photo.id);
+  const btn = document.getElementById('modal-like-btn');
+  btn.classList.toggle('liked', liked);
+  btn.querySelector('svg').setAttribute('fill', liked ? 'currentColor' : 'none');
+  const people = (photo.people||[]).map(p => `<div class="chip chip-accent">👤 @${escapeHTML(p.username||p)}</div>`).join('');
+  document.getElementById('modal-people').innerHTML = people;
+  document.getElementById('photo-modal').classList.add('open');
+}
+function closeModal(e) { if (e.target.id==='photo-modal') document.getElementById('photo-modal').classList.remove('open'); }
+function modalLike() { if (currentModalId) toggleLike(currentModalId); }
+document.addEventListener('keydown', e => { if (e.key==='Escape') document.getElementById('photo-modal').classList.remove('open'); });
+
+// ── URL PARAMS ────────────────────────────────────
+const urlParams = new URLSearchParams(window.location.search);
+const initQ   = urlParams.get('q')   || '';
+const initTag = urlParams.get('tag') || '';
+if (initQ) {
+  document.getElementById('search-input').value = initQ;
+  document.getElementById('search-clear').classList.add('show');
+  exploreState.q = initQ;
+} else if (initTag) {
+  exploreState.q = initTag;
+  document.getElementById('tag-banner').style.display = 'flex';
+  document.getElementById('tag-banner-title').textContent = '#' + initTag;
+  document.getElementById('tag-banner-sub').textContent   = 'Photos tagged with #' + initTag;
+}
+runExplore();
+</script>
+</body>
+</html>

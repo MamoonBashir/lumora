@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.npm/
+
+# Azure Functions local settings (contains secrets — never commit!)
+backend/local.settings.json
+
+# Build outputs
+dist/
+.build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp test files
+backend/set-creator.js

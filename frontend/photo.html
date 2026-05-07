@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lumora — Photo</title>
+<link rel="stylesheet" href="css/shared.css"/>
+<style>
+.photo-page { max-width: 1100px; margin: calc(60px + 24px) auto 80px; padding: 0 16px; }
+
+/* Breadcrumb */
+.breadcrumb { display:flex; align-items:center; gap:8px; font-size:.84rem; color:var(--text-sub); margin-bottom:20px; }
+.breadcrumb a { color:var(--blue); transition:opacity var(--trans); }
+.breadcrumb a:hover { opacity:.75; }
+.breadcrumb span { color:var(--text-light); }
+
+/* Layout */
+.photo-layout { display:grid; grid-template-columns:1fr 400px; gap:24px; align-items:start; }
+@media(max-width:900px){ .photo-layout{ grid-template-columns:1fr; } }
+
+/* Photo panel */
+.photo-panel { position:sticky; top:calc(60px + 16px); }
+.photo-main-wrap {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden;
+  position:relative;
+}
+.photo-main-img { width:100%; display:block; max-height:75vh; object-fit:contain; background:#000; }
+.photo-main-img.loading { min-height:400px; }
+
+/* Person tags on main photo */
+.photo-tags-layer { position:absolute; inset:0; pointer-events:none; }
+.photo-tag { position:absolute; pointer-events:all; cursor:pointer; transform:translate(-50%,-100%); }
+.photo-tag-dot { width:12px; height:12px; background:rgba(255,255,255,.9); border-radius:50%; border:2px solid rgba(0,0,0,.2); margin:0 auto 4px; box-shadow:0 2px 8px rgba(0,0,0,.4); }
+.photo-tag-chip {
+  background:rgba(0,0,0,.8); color:#fff; padding:4px 10px;
+  border-radius:20px; font-size:.74rem; font-weight:700; white-space:nowrap;
+  opacity:0; transform:translateY(4px); transition:all .15s ease;
+  backdrop-filter:blur(4px); pointer-events:none;
+}
+.photo-tag:hover .photo-tag-chip { opacity:1; transform:translateY(0); }
+.show-tags .photo-tag-chip { opacity:1; transform:translateY(0); }
+
+/* Tag toggle button */
+.tag-toggle-btn {
+  position:absolute; bottom:10px; left:10px;
+  background:rgba(0,0,0,.65); color:#fff; padding:5px 12px;
+  border-radius:20px; font-size:.74rem; font-weight:700;
+  backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,.15);
+  transition:background var(--trans);
+}
+.tag-toggle-btn:hover { background:rgba(0,0,0,.85); }
+
+/* Filter indicator */
+.filter-badge {
+  position:absolute; top:10px; left:10px;
+  background:rgba(0,0,0,.65); color:#fff; padding:4px 10px;
+  border-radius:20px; font-size:.72rem; font-weight:700;
+  backdrop-filter:blur(4px);
+}
+
+/* Photo actions bar */
+.photo-actions-bar {
+  display:flex; align-items:center; gap:4px;
+  padding:10px 14px; border-top:1px solid var(--border);
+}
+.photo-nav-btn {
+  padding:8px 14px; border-radius:8px; border:1.5px solid var(--border);
+  font-size:.82rem; font-weight:700; color:var(--text-sub);
+  transition:all var(--trans); display:flex; align-items:center; gap:5px;
+}
+.photo-nav-btn:hover { border-color:var(--text-sub); color:var(--text); }
+
+/* Info panel */
+.info-panel {}
+.info-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden; margin-bottom:16px;
+}
+.info-header { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); }
+.info-creator-ring { width:46px; height:46px; border-radius:50%; background:var(--grad); padding:2px; flex-shrink:0; }
+.info-creator-ring img { width:100%; height:100%; border-radius:50%; border:2px solid var(--surface); object-fit:cover; }
+.info-creator-name { font-weight:800; font-size:.92rem; }
+.info-creator-role { font-size:.76rem; margin-top:2px; }
+.follow-btn {
+  margin-left:auto; padding:7px 16px; border-radius:8px;
+  background:var(--blue); color:#fff; font-weight:700; font-size:.82rem;
+  transition:opacity var(--trans);
+}
+.follow-btn:hover { opacity:.85; }
+.follow-btn.following { background:var(--surface2); color:var(--text); border:1.5px solid var(--border); }
+
+/* Metadata */
+.info-body { padding:14px 16px; }
+.info-title { font-size:1.1rem; font-weight:900; letter-spacing:-.01em; margin-bottom:6px; }
+.info-caption { font-size:.9rem; line-height:1.65; color:var(--text-sub); margin-bottom:14px; }
+.info-meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.meta-item { display:flex; flex-direction:column; gap:2px; }
+.meta-label { font-size:.72rem; font-weight:800; color:var(--text-sub); letter-spacing:.5px; text-transform:uppercase; }
+.meta-value { font-size:.86rem; font-weight:600; }
+.info-hashtags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.info-people   { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.person-chip {
+  display:flex; align-items:center; gap:6px;
+  background:var(--surface2); border:1px solid var(--border); border-radius:20px;
+  padding:5px 12px; font-size:.8rem; font-weight:700; cursor:pointer;
+  transition:background var(--trans);
+}
+.person-chip:hover { background:var(--border); }
+.person-chip-avatar { width:22px; height:22px; border-radius:50%; background:var(--grad); }
+
+/* Actions row */
+.info-actions { display:flex; align-items:center; gap:4px; padding:10px 16px; border-top:1px solid var(--border); }
+
+/* Rating card */
+.rating-card { padding:16px; }
+.rating-title { font-weight:800; font-size:.88rem; margin-bottom:12px; }
+.rating-display { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.rating-big { font-size:2.4rem; font-weight:900; line-height:1; }
+.rating-stars-big { display:flex; gap:3px; margin-bottom:4px; }
+.rating-count { font-size:.8rem; color:var(--text-sub); }
+.rating-bars { display:flex; flex-direction:column; gap:5px; flex:1; }
+.rating-bar-row { display:flex; align-items:center; gap:8px; font-size:.75rem; }
+.rating-bar-track { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+.rating-bar-fill  { height:100%; border-radius:3px; background:var(--yellow); transition:width .4s ease; }
+.your-rating-row { border-top:1px solid var(--border); padding-top:12px; }
+.your-rating-label { font-size:.82rem; color:var(--text-sub); margin-bottom:8px; }
+.your-stars { display:flex; gap:5px; }
+.your-star { font-size:1.6rem; cursor:pointer; transition:transform var(--trans); filter:grayscale(1); }
+.your-star.on { filter:none; }
+.your-star:hover { transform:scale(1.25); filter:none; }
+
+/* Comments card */
+.comments-card { padding:16px; }
+.comments-title { font-weight:800; font-size:.88rem; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+.comment-list { display:flex; flex-direction:column; gap:14px; max-height:340px; overflow-y:auto; padding-right:4px; margin-bottom:14px; }
+.comment-item { display:flex; gap:10px; }
+.comment-avatar { width:32px; height:32px; border-radius:50%; background:var(--grad); flex-shrink:0; object-fit:cover; }
+.comment-bubble { flex:1; }
+.comment-user { font-weight:700; font-size:.84rem; }
+.comment-text { font-size:.85rem; line-height:1.55; color:var(--text-sub); margin-top:2px; }
+.comment-time { font-size:.72rem; color:var(--text-light); margin-top:3px; }
+.comment-add-row { display:flex; gap:10px; border-top:1px solid var(--border); padding-top:12px; }
+.comment-add-input {
+  flex:1; border:1.5px solid var(--border); border-radius:20px;
+  padding:8px 14px; font-size:.86rem; background:var(--surface2);
+  color:var(--text); outline:none; transition:border-color var(--trans);
+}
+.comment-add-input:focus { border-color:var(--accent); }
+.comment-add-input::placeholder { color:var(--text-light); }
+.comment-post-btn {
+  padding:8px 16px; border-radius:20px; background:var(--grad);
+  color:#fff; font-weight:700; font-size:.84rem; flex-shrink:0;
+}
+
+/* Loading skeleton for photo page */
+.skel-photo-main { height:500px; border-radius:var(--radius); }
+</style>
+</head>
+<body>
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/api.js"></script>
+<!-- mockdata disabled -->
+<script> requireAuth(); injectNavbar(''); </script>
+
+<div class="photo-page">
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="feed.html">Home</a>
+    <span>›</span>
+    <a href="explore.html">Explore</a>
+    <span>›</span>
+    <span id="bc-title">Loading…</span>
+  </div>
+
+  <!-- Loading state -->
+  <div id="loading-state">
+    <div class="photo-layout">
+      <div><div class="skeleton skel-photo-main"></div></div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="skeleton" style="height:120px;border-radius:var(--radius)"></div>
+        <div class="skeleton" style="height:200px;border-radius:var(--radius)"></div>
+        <div class="skeleton" style="height:160px;border-radius:var(--radius)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo layout (hidden until loaded) -->
+  <div class="photo-layout" id="photo-layout" style="display:none">
+
+    <!-- LEFT: Photo -->
+    <div class="photo-panel">
+      <div class="photo-main-wrap" id="photo-wrap">
+        <img id="photo-img" class="photo-main-img" src="" alt=""/>
+        <div class="photo-tags-layer" id="tags-layer"></div>
+        <button class="tag-toggle-btn" id="tag-toggle-btn" onclick="toggleTags()" style="display:none">
+          👥 Show People
+        </button>
+        <div class="filter-badge" id="filter-badge" style="display:none"></div>
+      </div>
+      <div class="photo-actions-bar">
+        <button class="photo-nav-btn" onclick="navigatePhoto(-1)">‹ Prev</button>
+        <div style="flex:1"></div>
+        <button class="photo-nav-btn" onclick="sharePhoto(currentPhotoId)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+        <button class="photo-nav-btn" onclick="navigatePhoto(1)">Next ›</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Info panel -->
+    <div class="info-panel">
+
+      <!-- Creator + title + metadata -->
+      <div class="info-card">
+        <div class="info-header">
+          <div class="info-creator-ring"><img id="creator-avatar" src="" alt=""/></div>
+          <div>
+            <div class="info-creator-name" id="creator-name">—</div>
+            <div class="info-creator-role"><span class="role-badge role-creator">Creator</span></div>
+          </div>
+          <button class="follow-btn" id="follow-btn" onclick="toggleFollow()">Follow</button>
+        </div>
+        <div class="info-body">
+          <div class="info-title"    id="info-title">—</div>
+          <div class="info-caption"  id="info-caption"></div>
+          <div class="info-meta-grid">
+            <div class="meta-item">
+              <div class="meta-label">Location</div>
+              <div class="meta-value" id="meta-location">—</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Posted</div>
+              <div class="meta-value" id="meta-date">—</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Likes</div>
+              <div class="meta-value" id="meta-likes">—</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Comments</div>
+              <div class="meta-value" id="meta-comments">—</div>
+            </div>
+          </div>
+          <div class="info-hashtags" id="info-hashtags"></div>
+          <div class="info-people"   id="info-people"></div>
+        </div>
+        <div class="info-actions">
+          <button class="action-btn" id="like-btn-main" onclick="doLike()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span id="like-count-main">0</span>
+          </button>
+          <button class="action-btn" onclick="document.getElementById('comment-input').focus()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span id="comment-count-main">0</span>
+          </button>
+          <div style="flex:1"></div>
+          <button class="action-btn" id="save-btn-main" onclick="doSave()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            Save
+          </button>
+        </div>
+      </div>
+
+      <!-- Rating -->
+      <div class="info-card">
+        <div class="rating-card">
+          <div class="rating-title">Community Rating</div>
+          <div class="rating-display">
+            <div>
+              <div class="rating-big grad-text" id="avg-rating">—</div>
+              <div class="rating-stars-big" id="avg-stars"></div>
+              <div class="rating-count" id="rating-count"></div>
+            </div>
+            <div class="rating-bars" id="rating-bars"></div>
+          </div>
+          <div class="your-rating-row">
+            <div class="your-rating-label">Your rating:</div>
+            <div class="your-stars" id="your-stars">
+              <span class="your-star" onclick="submitRating(1)">★</span>
+              <span class="your-star" onclick="submitRating(2)">★</span>
+              <span class="your-star" onclick="submitRating(3)">★</span>
+              <span class="your-star" onclick="submitRating(4)">★</span>
+              <span class="your-star" onclick="submitRating(5)">★</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comments -->
+      <div class="info-card">
+        <div class="comments-card">
+          <div class="comments-title">
+            <span>Comments <span id="comment-badge" style="color:var(--text-sub);font-weight:400"></span></span>
+            <select id="comment-sort" onchange="sortComments()" style="font-size:.78rem;border:1px solid var(--border);border-radius:6px;padding:3px 8px;background:var(--surface);color:var(--text);outline:none">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+            </select>
+          </div>
+          <div class="comment-list" id="comment-list">
+            <div style="text-align:center;padding:20px;color:var(--text-sub);font-size:.88rem">Loading comments…</div>
+          </div>
+          <div class="comment-add-row">
+            <input class="comment-add-input" id="comment-input" placeholder="Write a comment…" onkeydown="handleCommentKey(event)"/>
+            <button class="comment-post-btn" onclick="submitComment()">Post</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Error state -->
+  <div class="empty-state" id="error-state" style="display:none">
+    <div class="empty-icon">😕</div>
+    <div class="empty-title">Photo not found</div>
+    <div class="empty-desc">This photo may have been removed or the link is invalid.</div>
+    <a href="feed.html" class="btn-primary btn-sm">Back to Feed</a>
+  </div>
+</div>
+
+<script>
+let currentPhotoId = null;
+let tagsVisible    = false;
+let following      = false;
+let comments       = [];
+
+// ── INIT ──────────────────────────────────────────
+const urlParams = new URLSearchParams(window.location.search);
+const photoId   = urlParams.get('id');
+
+if (!photoId) {
+  showState('error');
+} else {
+  currentPhotoId = photoId;
+  loadPhoto(photoId);
+}
+
+async function loadPhoto(id) {
+  try {
+    const photo = await API.getPhoto(id);
+    renderPhoto(photo);
+    loadComments(id);
+  } catch(e) {
+    console.error('loadPhoto error:', e);
+    showState('error');
+    showToast('Connect Azure backend to load photo details.', 'info');
+  }
+}
+
+function showState(state) {
+  document.getElementById('loading-state').style.display  = state === 'loading'  ? 'block' : 'none';
+  document.getElementById('photo-layout').style.display   = state === 'loaded'   ? 'grid'  : 'none';
+  document.getElementById('error-state').style.display    = state === 'error'    ? 'block' : 'none';
+}
+
+function renderPhoto(photo) {
+  document.title = `Lumora — ${photo.title || 'Photo'}`;
+  document.getElementById('bc-title').textContent = photo.title || 'Photo';
+
+  // Image
+  const img = document.getElementById('photo-img');
+  img.src = photo.imageUrl || photo.thumbnailUrl || photo.blobUrl || '';
+  img.alt = photo.title || '';
+
+  // Filter badge
+  if (photo.filter && photo.filter !== 'Original') {
+    const badge = document.getElementById('filter-badge');
+    badge.textContent = '🎨 ' + photo.filter;
+    badge.style.display = 'block';
+    const filterMap = {
+      Moon: 'grayscale(1)', Clarendon: 'contrast(1.2) saturate(1.35)',
+      Juno: 'sepia(.35) contrast(1.1) brightness(1.1)', 'Lo-Fi': 'saturate(1.4) contrast(1.1)',
+      Warm: 'sepia(.6) brightness(1.05)', Cold: 'hue-rotate(30deg) saturate(.9)',
+      Vivid: 'saturate(2) contrast(1.1)',
+    };
+    if (filterMap[photo.filter]) img.style.filter = filterMap[photo.filter];
+  }
+
+  // Creator
+  document.getElementById('creator-avatar').src = photo.creatorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(photo.creatorUsername||'C')}&background=e1306c&color=fff`;
+  document.getElementById('creator-name').textContent = photo.creatorUsername || 'Creator';
+
+  // Info
+  document.getElementById('info-title').textContent   = photo.title || 'Untitled';
+  document.getElementById('info-caption').innerHTML   = parseHashtags(escapeHTML(photo.caption || photo.description || ''));
+  document.getElementById('meta-location').textContent = photo.location || '—';
+  document.getElementById('meta-date').textContent    = timeAgo(photo.createdAt || new Date());
+  document.getElementById('meta-likes').textContent   = formatNum(photo.likeCount || photo.likes || 0);
+  document.getElementById('meta-comments').textContent = formatNum(photo.commentCount || 0);
+
+  // Like / save state
+  const liked = LikeState.isLiked(photo.id);
+  const saved = SaveState.isSaved(photo.id);
+  document.getElementById('like-count-main').textContent = formatNum(photo.likeCount || photo.likes || 0);
+  document.getElementById('comment-count-main').textContent = formatNum(photo.commentCount || 0);
+  if (liked) {
+    const lb = document.getElementById('like-btn-main');
+    lb.classList.add('liked');
+    lb.querySelector('svg').setAttribute('fill','currentColor');
+  }
+  if (saved) {
+    const sb = document.getElementById('save-btn-main');
+    sb.classList.add('saved');
+    sb.querySelector('svg').setAttribute('fill','currentColor');
+  }
+
+  // Hashtags
+  const tags = (photo.hashtags || []).map(t => `<span class="chip chip-accent" onclick="searchTag('${escapeHTML(t)}')">#${escapeHTML(t)}</span>`).join('');
+  document.getElementById('info-hashtags').innerHTML = tags;
+
+  // People chips + tags
+  const people = photo.people || [];
+  document.getElementById('info-people').innerHTML = people.map(p => `
+    <div class="person-chip">
+      <div class="person-chip-avatar"></div>
+      @${escapeHTML(p.username || p)}
+    </div>`).join('');
+
+  if (people.length > 0) {
+    document.getElementById('tag-toggle-btn').style.display = 'block';
+    document.getElementById('tags-layer').innerHTML = people.map(p => `
+      <div class="photo-tag" style="left:${p.x||30}%;top:${p.y||50}%">
+        <div class="photo-tag-dot"></div>
+        <div class="photo-tag-chip">@${escapeHTML(p.username||p)}</div>
+      </div>`).join('');
+  }
+
+  // Rating
+  const avg = photo.avgRating || 0;
+  const cnt = photo.ratingCount || 0;
+  document.getElementById('avg-rating').textContent = avg > 0 ? avg.toFixed(1) : '—';
+  document.getElementById('avg-stars').innerHTML = [1,2,3,4,5].map(n =>
+    `<span class="star${n <= Math.round(avg) ? ' on' : ''}">★</span>`).join('');
+  document.getElementById('rating-count').textContent = cnt > 0 ? `${cnt} ratings` : 'No ratings yet';
+  renderRatingBars(photo.ratingBreakdown || {});
+
+  showState('loaded');
+}
+
+function renderRatingBars(breakdown) {
+  const total = Object.values(breakdown).reduce((a,b) => a+b, 0) || 1;
+  document.getElementById('rating-bars').innerHTML = [5,4,3,2,1].map(n => `
+    <div class="rating-bar-row">
+      <span>${n}★</span>
+      <div class="rating-bar-track">
+        <div class="rating-bar-fill" style="width:${((breakdown[n]||0)/total*100).toFixed(0)}%"></div>
+      </div>
+      <span style="width:24px;text-align:right">${breakdown[n]||0}</span>
+    </div>`).join('');
+}
+
+// ── COMMENTS ─────────────────────────────────────
+async function loadComments(id) {
+  try {
+    const data = await API.getComments(id);
+    comments = data.comments || [];
+    renderComments();
+  } catch {
+    comments = [];
+    document.getElementById('comment-list').innerHTML =
+      `<div style="text-align:center;padding:20px;color:var(--text-sub);font-size:.88rem">Comments load from Azure backend.</div>`;
+  }
+}
+
+function renderComments() {
+  document.getElementById('comment-badge').textContent = comments.length ? `(${comments.length})` : '';
+  if (comments.length === 0) {
+    document.getElementById('comment-list').innerHTML =
+      `<div style="text-align:center;padding:20px;color:var(--text-sub);font-size:.88rem">No comments yet. Be the first!</div>`;
+    return;
+  }
+  document.getElementById('comment-list').innerHTML = comments.map(c => `
+    <div class="comment-item">
+      <div class="comment-avatar" style="background:var(--grad)"></div>
+      <div class="comment-bubble">
+        <div class="comment-user">${escapeHTML(c.username || 'User')}</div>
+        <div class="comment-text">${escapeHTML(c.text || '')}</div>
+        <div class="comment-time">${timeAgo(c.createdAt || new Date())}</div>
+      </div>
+    </div>`).join('');
+}
+
+function sortComments() {
+  const order = document.getElementById('comment-sort').value;
+  comments.sort((a,b) => order === 'newest'
+    ? new Date(b.createdAt) - new Date(a.createdAt)
+    : new Date(a.createdAt) - new Date(b.createdAt));
+  renderComments();
+}
+
+function handleCommentKey(e) { if (e.key === 'Enter') submitComment(); }
+
+async function submitComment() {
+  const input = document.getElementById('comment-input');
+  const btn   = document.querySelector('.comment-post-btn');
+  const text  = input.value.trim();
+  if (!text) return;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const c = await API.addComment(currentPhotoId, text);
+    // Use server response or build local object
+    const comment = c || { username: getUser()?.username || 'You', text, createdAt: new Date().toISOString() };
+    comments.unshift(comment);
+    renderComments();
+    input.value = '';
+    // Update comment counts in UI
+    const newCnt = comments.length;
+    document.getElementById('comment-count-main').textContent = formatNum(newCnt);
+    document.getElementById('meta-comments').textContent = formatNum(newCnt);
+    showToast('💬 Comment posted!', 'success');
+  } catch(e) {
+    console.error('submitComment error:', e);
+    showToast('⚠️ Failed to post comment. Are you logged in?', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Post';
+  }
+}
+
+// ── RATING ────────────────────────────────────────
+async function submitRating(score) {
+  document.querySelectorAll('.your-star').forEach((s,i) => s.classList.toggle('on', i < score));
+  showToast(`⭐ Rated ${score} star${score>1?'s':''}!`, 'success');
+  try {
+    const res = await API.ratePhoto(currentPhotoId, score);
+    if (res && res.avgRating !== undefined) {
+      document.getElementById('avg-rating').textContent = res.avgRating.toFixed(1);
+      document.getElementById('rating-count').textContent = `${res.ratingCount} rating${res.ratingCount !== 1 ? 's' : ''}`;
+      document.getElementById('avg-stars').innerHTML = [1,2,3,4,5].map(n =>
+        `<span class="star${n <= Math.round(res.avgRating) ? ' on' : ''}">★</span>`).join('');
+    }
+  } catch(e) {
+    console.error('submitRating error:', e);
+    showToast('⚠️ Rating failed. Please try again.', 'error');
+  }
+}
+
+// ── LIKE / SAVE ───────────────────────────────────
+async function doLike() {
+  if (!currentPhotoId) return;
+  const btn   = document.getElementById('like-btn-main');
+  const count = document.getElementById('like-count-main');
+  // Optimistic UI update first
+  const wasLiked = LikeState.isLiked(currentPhotoId);
+  const liked    = LikeState.toggle(currentPhotoId);
+  btn.classList.toggle('liked', liked);
+  btn.querySelector('svg').setAttribute('fill', liked ? 'currentColor' : 'none');
+  const n = parseInt(count.textContent.replace(/[^\d]/g,'')) + (liked ? 1 : -1);
+  count.textContent = formatNum(Math.max(0,n));
+  document.getElementById('meta-likes').textContent = formatNum(Math.max(0,n));
+  showToast(liked ? '❤️ Liked!' : '🤍 Unliked', liked ? 'success' : 'info');
+  // Persist to backend
+  try {
+    const res = await API.toggleLike(currentPhotoId);
+    // Update with server's authoritative count
+    if (res && res.likeCount !== undefined) {
+      count.textContent = formatNum(res.likeCount);
+      document.getElementById('meta-likes').textContent = formatNum(res.likeCount);
+    }
+    // Sync localStorage with server response
+    if (res && res.liked !== liked) LikeState.toggle(currentPhotoId);
+  } catch(e) {
+    // Rollback on failure
+    LikeState.toggle(currentPhotoId);
+    btn.classList.toggle('liked', wasLiked);
+    btn.querySelector('svg').setAttribute('fill', wasLiked ? 'currentColor' : 'none');
+    count.textContent = formatNum(Math.max(0, n + (liked ? -1 : 1)));
+    document.getElementById('meta-likes').textContent = count.textContent;
+    showToast('⚠️ Could not update like. Please try again.', 'error');
+  }
+}
+
+async function doSave() {
+  if (!currentPhotoId) return;
+  const btn = document.getElementById('save-btn-main');
+  // Optimistic UI update first
+  const wasSaved = SaveState.isSaved(currentPhotoId);
+  const saved    = SaveState.toggle(currentPhotoId);
+  btn.classList.toggle('saved', saved);
+  btn.querySelector('svg').setAttribute('fill', saved ? 'currentColor' : 'none');
+  showToast(saved ? '🔖 Saved to collection' : '📌 Removed from saved', saved ? 'success' : 'info');
+  // Persist to backend
+  try {
+    await API.toggleSave(currentPhotoId);
+  } catch(e) {
+    // Rollback on failure
+    SaveState.toggle(currentPhotoId);
+    btn.classList.toggle('saved', wasSaved);
+    btn.querySelector('svg').setAttribute('fill', wasSaved ? 'currentColor' : 'none');
+    showToast('⚠️ Could not update save. Please try again.', 'error');
+  }
+}
+
+// ── TAGS TOGGLE ───────────────────────────────────
+function toggleTags() {
+  tagsVisible = !tagsVisible;
+  document.getElementById('tags-layer').classList.toggle('show-tags', tagsVisible);
+  document.getElementById('tag-toggle-btn').textContent = tagsVisible ? '👥 Hide People' : '👥 Show People';
+}
+
+// ── FOLLOW ────────────────────────────────────────
+function toggleFollow() {
+  following = !following;
+  const btn = document.getElementById('follow-btn');
+  btn.textContent = following ? 'Following ✓' : 'Follow';
+  btn.classList.toggle('following', following);
+  showToast(following ? '✅ Following creator' : 'Unfollowed', following ? 'success' : 'info');
+}
+
+// ── NAVIGATION ────────────────────────────────────
+function navigatePhoto(dir) {
+  showToast('Navigation loads from API feed', 'info');
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowLeft')  navigatePhoto(-1);
+  if (e.key === 'ArrowRight') navigatePhoto(1);
+  if (e.key === 'l' || e.key === 'L') doLike();
+  if (e.key === 's' || e.key === 'S') doSave();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lumora — Profile</title>
+<link rel="stylesheet" href="css/shared.css"/>
+<style>
+.profile-wrap { max-width: 940px; margin: calc(60px + 20px) auto 80px; padding: 0 16px; }
+
+/* Cover */
+.cover-wrap {
+  height: 220px; border-radius: var(--radius) var(--radius) 0 0;
+  overflow: hidden; background: var(--grad); position: relative;
+}
+.cover-wrap img { width:100%; height:100%; object-fit:cover; }
+.cover-edit-btn {
+  position:absolute; bottom:12px; right:12px;
+  background:rgba(0,0,0,.55); color:#fff; padding:6px 14px;
+  border-radius:8px; font-size:.78rem; font-weight:700;
+  backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,.15);
+  transition:background var(--trans);
+}
+.cover-edit-btn:hover { background:rgba(0,0,0,.75); }
+
+/* Profile card */
+.profile-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:0 0 var(--radius) var(--radius);
+  border-top:none; padding:0 24px 24px; margin-bottom:24px;
+}
+.profile-top { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+.profile-avatar-outer {
+  width:100px; height:100px; border-radius:50%;
+  border:4px solid var(--surface); background:var(--surface);
+  margin-top:-50px; overflow:hidden; flex-shrink:0;
+  box-shadow:0 4px 16px rgba(0,0,0,.12); position:relative;
+}
+.profile-avatar-outer img { width:100%; height:100%; object-fit:cover; }
+.avatar-skeleton { width:100%; height:100%; background:var(--grad); }
+.profile-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.edit-profile-btn {
+  padding:9px 20px; border-radius:9px; border:1.5px solid var(--border);
+  font-weight:700; font-size:.88rem; transition:all var(--trans);
+}
+.edit-profile-btn:hover { border-color:var(--text-sub); background:var(--surface2); }
+.profile-name { font-size:1.3rem; font-weight:900; letter-spacing:-.01em; }
+.profile-username { color:var(--text-sub); font-size:.9rem; margin-top:2px; }
+.profile-bio-text { color:var(--text-sub); font-size:.9rem; line-height:1.6; margin:10px 0; max-width:520px; }
+.profile-meta-row { display:flex; flex-wrap:wrap; gap:16px; color:var(--text-sub); font-size:.85rem; margin-bottom:14px; }
+.profile-meta-item { display:flex; align-items:center; gap:5px; }
+.profile-stats-row { display:flex; gap:28px; margin-top:14px; flex-wrap:wrap; }
+.pstat { cursor:pointer; }
+.pstat-num   { font-weight:900; font-size:1.05rem; }
+.pstat-label { color:var(--text-sub); font-size:.8rem; }
+.pstat:hover .pstat-num { color:var(--accent); }
+
+/* Tabs */
+.profile-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:20px; }
+.ptab {
+  display:flex; align-items:center; gap:7px;
+  padding:12px 20px; font-weight:700; font-size:.88rem;
+  color:var(--text-sub); border-bottom:2.5px solid transparent;
+  transition:all var(--trans); cursor:pointer;
+}
+.ptab:hover  { color:var(--text); }
+.ptab.active { color:var(--text); border-bottom-color:var(--text); }
+.ptab-count  { background:var(--surface2); border-radius:20px; padding:2px 8px; font-size:.72rem; font-weight:800; }
+
+/* Photo grid */
+.profile-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; }
+.pg-item {
+  aspect-ratio:1; overflow:hidden; cursor:pointer; position:relative;
+  background:var(--surface2);
+}
+.pg-item img { width:100%; height:100%; object-fit:cover; transition:transform .3s ease; }
+.pg-item:hover img { transform:scale(1.07); }
+.pg-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,.4);
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  opacity:0; transition:opacity .2s; color:#fff; font-weight:700; font-size:.85rem;
+}
+.pg-item:hover .pg-overlay { opacity:1; }
+
+/* Edit profile modal */
+.edit-modal {
+  position:fixed; inset:0; background:rgba(0,0,0,.7);
+  display:none; align-items:center; justify-content:center;
+  z-index:1000; padding:20px; backdrop-filter:blur(4px);
+}
+.edit-modal.open { display:flex; }
+.edit-modal-box {
+  background:var(--surface); border-radius:var(--radius);
+  width:100%; max-width:480px; overflow:hidden;
+  animation:modalSlide .25s ease;
+}
+@keyframes modalSlide { from{opacity:0;transform:translateY(14px) scale(.97)} to{opacity:1;transform:none} }
+.edit-modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px; border-bottom:1px solid var(--border);
+  font-weight:800; font-size:1rem;
+}
+.edit-modal-body { padding:20px; }
+.edit-avatar-row { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
+.edit-avatar-preview {
+  width:72px; height:72px; border-radius:50%;
+  background:var(--grad); overflow:hidden; flex-shrink:0;
+}
+.edit-avatar-preview img { width:100%; height:100%; object-fit:cover; }
+.edit-avatar-btn { font-size:.84rem; color:var(--blue); font-weight:700; }
+.edit-modal-footer { display:flex; gap:10px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--border); }
+
+/* Liked / Saved layout */
+.liked-grid, .saved-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; }
+
+/* Skeleton grid */
+.skel-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; }
+.skel-grid-item { aspect-ratio:1; }
+
+@media(max-width:600px){ .profile-grid,.liked-grid,.saved-grid,.skel-grid{ grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/api.js"></script>
+<!-- mockdata disabled -->
+<script> requireAuth(); injectNavbar('profile'); </script>
+
+<div class="profile-wrap">
+
+  <!-- Loading skeleton -->
+  <div id="profile-loading">
+    <div class="skeleton" style="height:220px;border-radius:var(--radius) var(--radius) 0 0"></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 0 var(--radius) var(--radius);border-top:none;padding:0 24px 24px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px">
+        <div class="skeleton" style="width:100px;height:100px;border-radius:50%;margin-top:-50px;border:4px solid var(--surface)"></div>
+        <div class="skeleton" style="width:140px;height:36px;border-radius:9px"></div>
+      </div>
+      <div class="skeleton" style="width:200px;height:18px;border-radius:6px;margin-bottom:8px"></div>
+      <div class="skeleton" style="width:130px;height:14px;border-radius:6px;margin-bottom:12px"></div>
+      <div class="skeleton" style="width:380px;max-width:100%;height:14px;border-radius:6px;margin-bottom:6px"></div>
+      <div class="skeleton" style="width:280px;max-width:100%;height:14px;border-radius:6px"></div>
+    </div>
+  </div>
+
+  <!-- Profile content -->
+  <div id="profile-content" style="display:none">
+
+    <!-- Cover + card -->
+    <div class="cover-wrap" id="cover-wrap">
+      <img id="cover-img" src="" alt="" style="display:none"/>
+      <button class="cover-edit-btn" id="cover-edit-btn" onclick="openEditModal()" style="display:none">✏️ Edit Cover</button>
+    </div>
+    <div class="profile-card">
+      <div class="profile-top">
+        <div class="profile-avatar-outer">
+          <div class="avatar-skeleton" id="avatar-bg"></div>
+          <img id="profile-avatar" src="" alt="" style="position:absolute;inset:0;display:none"/>
+        </div>
+        <div class="profile-actions" id="profile-actions"></div>
+      </div>
+      <div class="profile-name"    id="profile-name">—</div>
+      <div class="profile-username" id="profile-username">—</div>
+      <div id="role-badge-wrap"></div>
+      <div class="profile-bio-text" id="profile-bio"></div>
+      <div class="profile-meta-row" id="profile-meta"></div>
+      <div class="profile-stats-row">
+        <div class="pstat" onclick="switchTab('photos')">
+          <div class="pstat-num" id="stat-posts">—</div>
+          <div class="pstat-label">Posts</div>
+        </div>
+        <div class="pstat" onclick="switchTab('liked')">
+          <div class="pstat-num" id="stat-likes">—</div>
+          <div class="pstat-label">Likes</div>
+        </div>
+        <div class="pstat" onclick="switchTab('saved')">
+          <div class="pstat-num" id="stat-saved">—</div>
+          <div class="pstat-label">Saved</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-num" id="stat-rating">—</div>
+          <div class="pstat-label">Avg Rating</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="profile-tabs">
+      <div class="ptab active" id="tab-photos" onclick="switchTab('photos')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Photos <span class="ptab-count" id="tab-photos-count">0</span>
+      </div>
+      <div class="ptab" id="tab-liked" onclick="switchTab('liked')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Liked <span class="ptab-count" id="tab-liked-count">0</span>
+      </div>
+      <div class="ptab" id="tab-saved" onclick="switchTab('saved-tab')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        Saved <span class="ptab-count" id="tab-saved-count">0</span>
+      </div>
+    </div>
+
+    <!-- Tab panels -->
+    <div id="panel-photos">
+      <div class="profile-grid" id="photos-grid"></div>
+      <div class="empty-state" id="photos-empty" style="display:none">
+        <div class="empty-icon">📷</div>
+        <div class="empty-title">No photos yet</div>
+        <div class="empty-desc">Photos uploaded by this creator will appear here.</div>
+      </div>
+    </div>
+
+    <div id="panel-liked" style="display:none">
+      <div class="liked-grid" id="liked-grid"></div>
+      <div class="empty-state" id="liked-empty" style="display:none">
+        <div class="empty-icon">❤️</div>
+        <div class="empty-title">No liked photos</div>
+        <div class="empty-desc">Photos you like will appear here.</div>
+      </div>
+    </div>
+
+    <div id="panel-saved-tab" style="display:none">
+      <div class="saved-grid" id="saved-grid-profile"></div>
+      <div class="empty-state" id="saved-empty" style="display:none">
+        <div class="empty-icon">🔖</div>
+        <div class="empty-title">Nothing saved yet</div>
+        <div class="empty-desc">Tap the bookmark icon on any photo to save it here.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="edit-modal" id="edit-modal" onclick="closeEditOutside(event)">
+  <div class="edit-modal-box">
+    <div class="edit-modal-header">
+      Edit Profile
+      <button onclick="closeEditModal()" style="color:var(--text-sub);font-size:1.1rem">✕</button>
+    </div>
+    <div class="edit-modal-body">
+      <div class="edit-avatar-row">
+        <div class="edit-avatar-preview"><img id="edit-avatar-preview" src="" alt=""/></div>
+        <div>
+          <button class="edit-avatar-btn" onclick="showToast('Photo upload connects to Azure Blob Storage','info')">Change Photo</button>
+          <div style="font-size:.76rem;color:var(--text-sub);margin-top:4px">JPG, PNG · Max 5MB</div>
+        </div>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Display Name</label>
+        <input class="form-input" id="edit-name" type="text" placeholder="Your display name"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="edit-username" type="text" placeholder="username"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Bio</label>
+        <textarea class="form-input form-textarea" id="edit-bio" rows="3" placeholder="Tell people about yourself…"></textarea>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Location</label>
+        <input class="form-input" id="edit-location" type="text" placeholder="City, Country"/>
+      </div>
+    </div>
+    <div class="edit-modal-footer">
+      <button class="btn-outline btn-sm" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-primary btn-sm" onclick="saveProfile()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const targetUserId = urlParams.get('user') || null;
+const currentUser  = getUser();
+const isOwnProfile = !targetUserId || targetUserId === currentUser?.id;
+
+async function loadProfile() {
+  try {
+    const user = isOwnProfile ? await API.me() : await API.getProfile(targetUserId);
+    renderProfile(user);
+    loadPhotos(user.id);
+  } catch {
+    renderProfileFallback();
+  }
+}
+
+function renderProfile(user) {
+  document.title = `Lumora — @${user.username || 'Profile'}`;
+
+  // Cover
+  if (user.coverUrl) {
+    const img = document.getElementById('cover-img');
+    img.src = user.coverUrl;
+    img.style.display = 'block';
+  }
+
+  // Avatar
+  const avatarUrl = user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName||user.username||'U')}&background=e1306c&color=fff&size=128`;
+  const avatarEl = document.getElementById('profile-avatar');
+  avatarEl.src = avatarUrl;
+  avatarEl.style.display = 'block';
+  document.getElementById('avatar-bg').style.display = 'none';
+  document.getElementById('edit-avatar-preview').src = avatarUrl;
+
+  // Text
+  document.getElementById('profile-name').textContent     = user.displayName || user.username || 'User';
+  document.getElementById('profile-username').textContent = '@' + (user.username || '');
+  document.getElementById('profile-bio').textContent      = user.bio || '';
+  document.getElementById('stat-posts').textContent       = formatNum(user.postCount || 0);
+  document.getElementById('stat-likes').textContent       = formatNum(user.likeCount || 0);
+  document.getElementById('stat-saved').textContent       = formatNum(user.savedCount || 0);
+  document.getElementById('stat-rating').textContent      = user.avgRating ? user.avgRating.toFixed(1) + '★' : '—';
+  document.getElementById('tab-photos-count').textContent = user.postCount || 0;
+  document.getElementById('tab-liked-count').textContent  = user.likeCount || 0;
+  document.getElementById('tab-saved-count').textContent  = user.savedCount || 0;
+  document.getElementById('edit-name').value     = user.displayName || '';
+  document.getElementById('edit-username').value = user.username    || '';
+  document.getElementById('edit-bio').value      = user.bio         || '';
+  document.getElementById('edit-location').value = user.location    || '';
+
+  // Role badge
+  const role = user.role || 'consumer';
+  document.getElementById('role-badge-wrap').innerHTML =
+    `<span class="role-badge role-${role}" style="margin-top:6px">${role === 'creator' ? '🎨 Creator' : '👤 Consumer'}</span>`;
+
+  // Meta row
+  const metas = [];
+  if (user.location) metas.push(`<div class="profile-meta-item">📍 ${escapeHTML(user.location)}</div>`);
+  if (user.joinedAt)  metas.push(`<div class="profile-meta-item">📅 Joined ${timeAgo(user.joinedAt)}</div>`);
+  document.getElementById('profile-meta').innerHTML = metas.join('');
+
+  // Actions
+  const actionsEl = document.getElementById('profile-actions');
+  if (isOwnProfile) {
+    document.getElementById('cover-edit-btn').style.display = 'block';
+    actionsEl.innerHTML = `
+      <button class="edit-profile-btn" onclick="openEditModal()">✏️ Edit Profile</button>
+      <button class="btn-outline btn-sm" onclick="logout()">Sign Out</button>`;
+  } else {
+    actionsEl.innerHTML = `
+      <button class="btn-blue" id="follow-action-btn" onclick="toggleFollow()">Follow</button>
+      <button class="btn-outline btn-sm" onclick="showToast('Message feature coming soon','info')">Message</button>`;
+  }
+
+  document.getElementById('profile-loading').style.display = 'none';
+  document.getElementById('profile-content').style.display = 'block';
+}
+
+function renderProfileFallback() {
+  const user = currentUser || {};
+  renderProfile({
+    username: user.username || 'username',
+    displayName: user.displayName || 'Your Name',
+    bio: user.bio || '',
+    role: user.role || 'consumer',
+    postCount: 0, likeCount: 0, savedCount: 0,
+  });
+  showToast('Connect Azure backend to load full profile.', 'info');
+}
+
+async function loadPhotos(userId) {
+  try {
+    const data = await API.getUserPhotos(userId);
+    renderGrid('photos-grid', data.photos || [], 'photos-empty');
+  } catch {
+    renderGrid('photos-grid', [], 'photos-empty');
+  }
+}
+
+function renderGrid(gridId, photos, emptyId) {
+  const grid  = document.getElementById(gridId);
+  const empty = document.getElementById(emptyId);
+  if (!photos.length) { if(empty) empty.style.display = 'block'; return; }
+  grid.innerHTML = photos.map(p => `
+    <div class="pg-item" onclick="window.location.href='photo.html?id=${p.id}'">
+      <img src="${p.thumbnailUrl||p.imageUrl}" alt="${escapeHTML(p.title||'')}" loading="lazy"/>
+      <div class="pg-overlay">
+        <span>❤️ ${formatNum(p.likes||0)}</span>
+        <span>💬 ${formatNum(p.commentCount||0)}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── TABS ─────────────────────────────────────────
+function switchTab(tab) {
+  ['photos','liked','saved-tab'].forEach(t => {
+    document.getElementById('panel-' + t).style.display   = t === tab ? 'block' : 'none';
+    document.getElementById('tab-'   + (t==='saved-tab'?'saved':t)).classList.toggle('active', t === tab);
+  });
+  if (tab === 'liked')     loadLiked();
+  if (tab === 'saved-tab') loadSavedProfile();
+}
+
+function loadLiked() {
+  const ids = Object.keys(JSON.parse(localStorage.getItem('lm_likes') || '{}'))
+    .filter(k => JSON.parse(localStorage.getItem('lm_likes') || '{}')[k]);
+  document.getElementById('tab-liked-count').textContent = ids.length;
+  document.getElementById('stat-likes').textContent = ids.length;
+  if (!ids.length) { document.getElementById('liked-empty').style.display = 'block'; return; }
+  document.getElementById('liked-grid').innerHTML = ids.map(id => `
+    <div class="pg-item" onclick="window.location.href='photo.html?id=${id}'">
+      <div style="width:100%;height:100%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:2rem">❤️</div>
+      <div class="pg-overlay"><span>Liked Photo</span></div>
+    </div>`).join('');
+}
+
+function loadSavedProfile() {
+  const ids = Object.keys(JSON.parse(localStorage.getItem('lm_saves') || '{}'))
+    .filter(k => JSON.parse(localStorage.getItem('lm_saves') || '{}')[k]);
+  document.getElementById('tab-saved-count').textContent = ids.length;
+  if (!ids.length) { document.getElementById('saved-empty').style.display = 'block'; return; }
+  document.getElementById('saved-grid-profile').innerHTML = ids.map(id => `
+    <div class="pg-item" onclick="window.location.href='photo.html?id=${id}'">
+      <div style="width:100%;height:100%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:2rem">🔖</div>
+      <div class="pg-overlay"><span>Saved Photo</span></div>
+    </div>`).join('');
+}
+
+// ── FOLLOW ────────────────────────────────────────
+let following = false;
+function toggleFollow() {
+  following = !following;
+  const btn = document.getElementById('follow-action-btn');
+  if (btn) {
+    btn.textContent = following ? '✓ Following' : 'Follow';
+    btn.className   = following ? 'btn-outline btn-sm' : 'btn-blue';
+  }
+  showToast(following ? '✅ Now following' : 'Unfollowed', following ? 'success' : 'info');
+}
+
+// ── EDIT MODAL ────────────────────────────────────
+function openEditModal()  { document.getElementById('edit-modal').classList.add('open'); }
+function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }
+function closeEditOutside(e) { if (e.target.id === 'edit-modal') closeEditModal(); }
+
+async function saveProfile() {
+  const payload = {
+    displayName: document.getElementById('edit-name').value.trim(),
+    username:    document.getElementById('edit-username').value.trim(),
+    bio:         document.getElementById('edit-bio').value.trim(),
+    location:    document.getElementById('edit-location').value.trim(),
+  };
+  try {
+    await API.updateProfile(payload);
+    const user = getUser() || {};
+    Object.assign(user, payload);
+    localStorage.setItem('lm_user', JSON.stringify(user));
+    closeEditModal();
+    showToast('✅ Profile updated!', 'success');
+    document.getElementById('profile-name').textContent = payload.displayName || payload.username;
+    document.getElementById('profile-bio').textContent  = payload.bio;
+  } catch {
+    closeEditModal();
+    showToast('Profile saved (connect backend to persist).', 'info');
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditModal(); });
+loadProfile();
+</script>
+</body>
+</html>

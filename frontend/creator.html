@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lumora — Creator Studio</title>
+<link rel="stylesheet" href="css/shared.css"/>
+<style>
+.creator-wrap { max-width: 1100px; margin: calc(60px + 20px) auto 80px; padding: 0 16px; }
+.creator-layout { display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
+@media(max-width:960px){ .creator-layout{ grid-template-columns:1fr; } }
+
+/* Page header */
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: 1.6rem; font-weight: 900; letter-spacing: -.02em; margin-bottom: 4px; }
+.page-header p  { color: var(--text-sub); font-size: .9rem; }
+
+/* Upload card */
+.upload-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 20px;
+}
+.upload-card-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  font-weight: 800; font-size: .95rem; display: flex; align-items: center; gap: 10px;
+}
+.upload-card-body { padding: 20px; }
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed var(--border2); border-radius: var(--radius);
+  padding: 44px 20px; text-align: center; cursor: pointer;
+  transition: all var(--trans); background: var(--surface2); margin-bottom: 20px;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--accent); background: rgba(225,48,108,.04);
+}
+.drop-zone-icon { font-size: 3rem; margin-bottom: 10px; }
+.drop-zone-text { color: var(--text-sub); font-size: .92rem; line-height: 1.6; }
+.drop-zone-text strong { color: var(--blue); }
+.drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* Preview strip */
+.preview-strip {
+  display: flex; gap: 10px; margin-bottom: 20px;
+  overflow-x: auto; padding-bottom: 6px; scrollbar-width: none;
+}
+.preview-strip::-webkit-scrollbar { display: none; }
+.preview-item {
+  flex-shrink: 0; width: 90px; position: relative; cursor: pointer;
+  border-radius: 8px; overflow: hidden; border: 2px solid transparent;
+  transition: border-color var(--trans);
+}
+.preview-item.active { border-color: var(--accent); }
+.preview-item img { width: 90px; height: 90px; object-fit: cover; display: block; }
+.preview-remove {
+  position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;
+  background: rgba(0,0,0,.65); color: #fff; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem; line-height: 1;
+}
+
+/* Filter strip */
+.filter-strip {
+  display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px;
+  padding-bottom: 6px; scrollbar-width: none;
+}
+.filter-strip::-webkit-scrollbar { display: none; }
+.filter-opt {
+  flex-shrink: 0; cursor: pointer; text-align: center;
+  border: 2px solid transparent; border-radius: 10px;
+  overflow: hidden; transition: border-color var(--trans);
+}
+.filter-opt.active { border-color: var(--accent); }
+.filter-opt img { width: 68px; height: 68px; object-fit: cover; display: block; }
+.filter-opt-name {
+  font-size: .68rem; font-weight: 700; padding: 4px 2px;
+  color: var(--text-sub); background: var(--surface2); text-align: center;
+}
+.filter-opt.active .filter-opt-name { color: var(--accent); }
+
+/* People tagger */
+.people-tagger { position: relative; }
+.people-tagger input { padding-right: 70px; }
+.people-add-inline {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--blue); font-weight: 800; font-size: .82rem;
+}
+.tagged-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tagged-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,149,246,.08); border: 1px solid rgba(0,149,246,.25);
+  border-radius: 20px; padding: 4px 10px; font-size: .78rem; font-weight: 700; color: var(--blue);
+}
+.tagged-chip button { color: var(--text-sub); font-size: .85rem; margin-left: 2px; }
+
+/* Publish button */
+.publish-btn {
+  width: 100%; padding: 14px; border-radius: var(--radius-sm);
+  background: var(--grad); color: #fff; font-weight: 800; font-size: 1rem;
+  border: none; cursor: pointer; letter-spacing: .4px;
+  transition: opacity var(--trans), transform var(--trans);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.publish-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+.publish-btn:disabled { opacity: .5; cursor: not-allowed; }
+.publish-spinner {
+  width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin .7s linear infinite; display: none;
+}
+.publish-btn.loading .pub-text { display: none; }
+.publish-btn.loading .publish-spinner { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Upload progress */
+.upload-progress {
+  display: none; background: var(--surface2); border-radius: 8px;
+  padding: 12px 14px; margin-top: 12px;
+}
+.upload-progress.show { display: block; }
+.progress-label { font-size: .82rem; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.progress-bar   { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill  { height: 100%; background: var(--grad); border-radius: 3px; transition: width .3s ease; width: 0%; }
+
+/* Sidebar: stats */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0; }
+.stat-box {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 12px; text-align: center;
+}
+.stat-box-num   { font-size: 1.5rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+.stat-box-label { font-size: .72rem; color: var(--text-sub); font-weight: 600; }
+.num-pink   { color: var(--accent); }
+.num-blue   { color: var(--blue); }
+.num-green  { color: var(--green); }
+.num-purple { color: #833ab4; }
+
+/* Manage posts */
+.manage-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.manage-header h3 { font-weight: 800; font-size: .9rem; }
+.manage-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 3px; }
+.manage-item {
+  aspect-ratio: 1; position: relative; overflow: hidden; cursor: pointer;
+  background: var(--surface2); border-radius: 4px;
+}
+.manage-item img { width:100%; height:100%; object-fit:cover; transition: transform .3s; }
+.manage-item:hover img { transform: scale(1.08); }
+.manage-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,.5);
+  opacity: 0; transition: opacity .2s; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+}
+.manage-item:hover .manage-overlay { opacity: 1; }
+.manage-btn {
+  padding: 5px 12px; border-radius: 6px; font-size: .72rem; font-weight: 700;
+  border: none; cursor: pointer;
+}
+.manage-btn.edit-btn   { background: #fff; color: var(--text); }
+.manage-btn.delete-btn { background: var(--red); color: #fff; }
+.manage-empty { text-align: center; padding: 32px 16px; color: var(--text-sub); font-size: .88rem; }
+
+/* Photo management list view */
+.manage-list { display: flex; flex-direction: column; gap: 10px; }
+.manage-list-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; transition: border-color var(--trans);
+}
+.manage-list-item:hover { border-color: var(--accent); }
+.manage-thumb { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.manage-info  { flex: 1; min-width: 0; }
+.manage-title { font-weight: 700; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.manage-stats { font-size: .76rem; color: var(--text-sub); margin-top: 3px; }
+.manage-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.icon-btn {
+  width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; border: 1px solid var(--border); transition: all var(--trans);
+  color: var(--text-sub);
+}
+.icon-btn:hover { border-color: var(--text-sub); color: var(--text); background: var(--surface); }
+.icon-btn.del:hover { border-color: var(--red); color: var(--red); }
+
+/* Delete confirm */
+.del-confirm {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  display: none; align-items: center; justify-content: center; z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+.del-confirm.open { display: flex; }
+.del-box {
+  background: var(--surface); border-radius: var(--radius); padding: 28px;
+  max-width: 360px; width: 100%; text-align: center;
+  animation: modalSlide .2s ease;
+}
+@keyframes modalSlide { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:none} }
+.del-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.del-title { font-weight: 800; font-size: 1rem; margin-bottom: 8px; }
+.del-desc  { color: var(--text-sub); font-size: .88rem; margin-bottom: 20px; }
+.del-btns  { display: flex; gap: 10px; }
+</style>
+</head>
+<body>
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/api.js"></script>
+<!-- mockdata disabled -->
+<script> requireAuth(); injectNavbar('creator'); </script>
+
+<div class="creator-wrap">
+  <div class="page-header">
+    <h1>Creator Studio <span class="grad-text">✦</span></h1>
+    <p>Upload and manage your photos, track engagement and grow your audience.</p>
+  </div>
+
+  <div class="creator-layout">
+
+    <!-- LEFT: Upload form -->
+    <div>
+      <div class="upload-card">
+        <div class="upload-card-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          New Photo Post
+        </div>
+        <div class="upload-card-body">
+
+          <!-- Drop zone -->
+          <div class="drop-zone" id="drop-zone"
+               ondragover="handleDrag(event,true)" ondragleave="handleDrag(event,false)"
+               ondrop="handleDrop(event)">
+            <input type="file" id="file-input" accept="image/*" multiple onchange="handleFileSelect(event)"/>
+            <div class="drop-zone-icon">🖼️</div>
+            <div class="drop-zone-text">
+              Drag &amp; drop photos here, or <strong>click to browse</strong><br/>
+              <span style="font-size:.8rem">JPG, PNG, WEBP · Max 20 MB each</span>
+            </div>
+          </div>
+
+          <!-- Selected files preview -->
+          <div class="preview-strip" id="preview-strip" style="display:none"></div>
+
+          <!-- Filter strip (shown after file selected) -->
+          <div id="filter-section" style="display:none">
+            <div style="font-size:.78rem;font-weight:800;color:var(--text-sub);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Filter</div>
+            <div class="filter-strip" id="filter-strip">
+              <div class="filter-opt active" onclick="selectFilter(this,'Original')">
+                <img id="fimg-0" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=80&q=70" alt="Original" style="filter:none"/>
+                <div class="filter-opt-name">Original</div>
+              </div>
+              <div class="filter-opt" onclick="selectFilter(this,'Moon')">
+                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=80&q=70" style="filter:grayscale(1)" alt="Moon"/>
+                <div class="filter-opt-name">Moon</div>
+              </div>
+              <div class="filter-opt" onclick="selectFilter(this,'Clarendon')">
+                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=80&q=70" style="filter:contrast(1.2) saturate(1.35)" alt="Clarendon"/>
+                <div class="filter-opt-name">Clarendon</div>
+              </div>
+              <div class="filter-opt" onclick="selectFilter(this,'Juno')">
+                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=80&q=70" style="filter:sepia(.35) contrast(1.1) brightness(1.1)" alt="Juno"/>
+                <div class="filter-opt-name">Juno</div>
+              </div>
+              <div class="filter-opt" onclick="selectFilter(this,'Lo-Fi')">
+                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=80&q=70" style="filter:saturate(1.4) contrast(1.1)" alt="Lo-Fi"/>
+                <div class="filter-opt-name">Lo-Fi</div>
+              </div>
+              <div class="filter-opt" onclick="selectFilter(this,'Warm')">
+                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=80&q=70" style="filter:sepia(.6) brightness(1.05)" alt="Warm"/>
+                <div class="filter-opt-name">Warm</div>
+              </div>
+              <div class="filter-opt" onclick="selectFilter(this,'Cold')">
+                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=80&q=70" style="filter:hue-rotate(30deg) saturate(.9)" alt="Cold"/>
+                <div class="filter-opt-name">Cold</div>
+              </div>
+              <div class="filter-opt" onclick="selectFilter(this,'Vivid')">
+                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=80&q=70" style="filter:saturate(2) contrast(1.1)" alt="Vivid"/>
+                <div class="filter-opt-name">Vivid</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form fields -->
+          <div class="form-field">
+            <label class="form-label">Title <span style="color:var(--accent)">*</span></label>
+            <input class="form-input" id="f-title" type="text" placeholder="Give your photo a title…" maxlength="80"/>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Caption</label>
+            <textarea class="form-input form-textarea" id="f-caption" rows="3"
+              placeholder="Write a caption… use #hashtags to get discovered"
+              oninput="parseCaption(this.value)"></textarea>
+            <div class="form-hint" id="caption-tags"></div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Location</label>
+            <input class="form-input" id="f-location" type="text" placeholder="📍 Add a location…"/>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Tag People</label>
+            <div class="people-tagger">
+              <input class="form-input" id="f-people" type="text"
+                     placeholder="Type a username and press Enter…"
+                     onkeydown="addPerson(event)"/>
+              <button class="people-add-inline" onclick="addPersonClick()">+ Add</button>
+            </div>
+            <div class="tagged-row" id="tagged-row"></div>
+          </div>
+
+          <!-- Upload progress -->
+          <div class="upload-progress" id="upload-progress">
+            <div class="progress-label">
+              <span id="progress-label-text">Uploading to Azure Blob Storage…</span>
+              <span id="progress-pct">0%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          </div>
+
+          <button class="publish-btn" id="publish-btn" onclick="publishPhoto()">
+            <span class="pub-text">🚀 Publish Photo</span>
+            <div class="publish-spinner"></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Manage posts section -->
+      <div class="upload-card">
+        <div class="upload-card-header" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            My Posts
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="manage-sort" onchange="loadMyPosts()"
+              style="font-size:.78rem;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:var(--surface);color:var(--text);outline:none">
+              <option value="newest">Newest</option>
+              <option value="most_liked">Most Liked</option>
+              <option value="top_rated">Top Rated</option>
+            </select>
+          </div>
+        </div>
+        <div class="upload-card-body" id="manage-body">
+          <!-- Skeleton loading -->
+          <div class="manage-list" id="manage-list">
+            <div style="display:flex;gap:12px;align-items:center;padding:10px 0">
+              <div class="skeleton" style="width:56px;height:56px;border-radius:8px;flex-shrink:0"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                <div class="skeleton" style="height:13px;width:60%;border-radius:5px"></div>
+                <div class="skeleton" style="height:10px;width:40%;border-radius:5px"></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;padding:10px 0">
+              <div class="skeleton" style="width:56px;height:56px;border-radius:8px;flex-shrink:0"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                <div class="skeleton" style="height:13px;width:70%;border-radius:5px"></div>
+                <div class="skeleton" style="height:10px;width:35%;border-radius:5px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Stats sidebar -->
+    <div>
+      <div class="sidebar-card" style="margin-bottom:16px">
+        <div class="sidebar-card-title">Your Stats</div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-box-num num-pink"  id="s-likes">—</div>
+            <div class="stat-box-label">Total Likes</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-num num-blue"  id="s-comments">—</div>
+            <div class="stat-box-label">Comments</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-num num-green" id="s-posts">—</div>
+            <div class="stat-box-label">Posts</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-num num-purple" id="s-rating">—</div>
+            <div class="stat-box-label">Avg Rating</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-card" style="margin-bottom:16px">
+        <div class="sidebar-card-title">Top Photo</div>
+        <div id="top-photo-wrap">
+          <div class="skeleton" style="height:140px;border-radius:8px;margin-bottom:10px"></div>
+          <div class="skeleton" style="height:12px;width:70%;border-radius:5px;margin-bottom:6px"></div>
+          <div class="skeleton" style="height:10px;width:50%;border-radius:5px"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">Upload Tips</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px;font-size:.84rem">
+            <span style="flex-shrink:0">📸</span>
+            <span style="color:var(--text-sub)">Use high-resolution photos (min 1080px) for best quality.</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:.84rem">
+            <span style="flex-shrink:0">#️⃣</span>
+            <span style="color:var(--text-sub)">Add 3–5 relevant hashtags in your caption to get discovered.</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:.84rem">
+            <span style="flex-shrink:0">👥</span>
+            <span style="color:var(--text-sub)">Tag people in your photos to increase engagement.</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:.84rem">
+            <span style="flex-shrink:0">📍</span>
+            <span style="color:var(--text-sub)">Add a location to appear in location-based searches.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm -->
+<div class="del-confirm" id="del-confirm" onclick="if(event.target===this)closeDelConfirm()">
+  <div class="del-box">
+    <div class="del-icon">🗑️</div>
+    <div class="del-title">Delete this photo?</div>
+    <div class="del-desc">This action cannot be undone. The photo and all its comments and ratings will be permanently removed from Azure storage.</div>
+    <div class="del-btns">
+      <button class="btn-outline btn-sm" style="flex:1" onclick="closeDelConfirm()">Cancel</button>
+      <button style="flex:1;padding:9px;border-radius:8px;background:var(--red);color:#fff;font-weight:700;font-size:.88rem;border:none;cursor:pointer" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedFiles = [];
+let selectedFilter = 'Original';
+let taggedPeople   = [];
+let deleteTargetId = null;
+
+// ── DRAG & DROP ───────────────────────────────────
+function handleDrag(e, over) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.toggle('drag-over', over);
+}
+function handleDrop(e) {
+  e.preventDefault();
+  handleDrag(e, false);
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  if (files.length) processFiles(files);
+}
+function handleFileSelect(e) {
+  const files = Array.from(e.target.files);
+  if (files.length) processFiles(files);
+}
+
+function processFiles(files) {
+  selectedFiles = files.slice(0, 5);
+  const strip = document.getElementById('preview-strip');
+  strip.style.display = 'flex';
+  strip.innerHTML = '';
+  selectedFiles.forEach((f, i) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const item = document.createElement('div');
+      item.className = 'preview-item' + (i === 0 ? ' active' : '');
+      item.dataset.idx = i;
+      item.onclick = () => selectPreviewItem(item, i);
+      item.innerHTML = `
+        <img src="${ev.target.result}" alt="Preview ${i+1}"/>
+        <button class="preview-remove" onclick="event.stopPropagation();removeFile(${i})">✕</button>`;
+      strip.appendChild(item);
+      if (i === 0) {
+        document.getElementById('filter-section').style.display = 'block';
+        updateFilterPreviews(ev.target.result);
+      }
+    };
+    reader.readAsDataURL(f);
+  });
+  document.getElementById('drop-zone').querySelector('.drop-zone-icon').textContent = '✅';
+  document.getElementById('drop-zone').querySelector('.drop-zone-text').innerHTML =
+    `<strong>${files.length} photo${files.length>1?'s':''} selected</strong> — click to change`;
+}
+
+function selectPreviewItem(item, idx) {
+  document.querySelectorAll('.preview-item').forEach(el => el.classList.remove('active'));
+  item.classList.add('active');
+}
+function removeFile(idx) {
+  selectedFiles.splice(idx, 1);
+  if (selectedFiles.length === 0) {
+    document.getElementById('preview-strip').style.display = 'none';
+    document.getElementById('filter-section').style.display = 'none';
+    document.getElementById('drop-zone').querySelector('.drop-zone-icon').textContent = '🖼️';
+    document.getElementById('drop-zone').querySelector('.drop-zone-text').innerHTML =
+      `Drag &amp; drop photos here, or <strong>click to browse</strong><br/><span style="font-size:.8rem">JPG, PNG, WEBP · Max 20 MB each</span>`;
+  }
+}
+
+function updateFilterPreviews(src) {
+  document.querySelectorAll('.filter-opt img').forEach(img => { img.src = src; });
+}
+
+// ── FILTER ────────────────────────────────────────
+function selectFilter(el, name) {
+  document.querySelectorAll('.filter-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  selectedFilter = name;
+  showToast(`🎨 Filter: ${name}`, 'info');
+}
+
+// ── CAPTION HASHTAG PARSER ────────────────────────
+function parseCaption(text) {
+  const tags = (text.match(/#\w+/g) || []);
+  const el   = document.getElementById('caption-tags');
+  el.innerHTML = tags.length
+    ? tags.map(t => `<span class="chip chip-accent" style="font-size:.72rem">${t}</span>`).join(' ')
+    : '';
+}
+
+// ── PEOPLE TAGGER ─────────────────────────────────
+function addPerson(e) { if (e.key === 'Enter') addPersonClick(); }
+function addPersonClick() {
+  const input = document.getElementById('f-people');
+  const val   = input.value.trim().replace(/^@/,'');
+  if (!val || taggedPeople.includes(val)) { input.value = ''; return; }
+  taggedPeople.push(val);
+  renderTaggedPeople();
+  input.value = '';
+  showToast(`👤 Tagged @${val}`, 'success');
+}
+function removePerson(name) {
+  taggedPeople = taggedPeople.filter(p => p !== name);
+  renderTaggedPeople();
+}
+function renderTaggedPeople() {
+  document.getElementById('tagged-row').innerHTML = taggedPeople.map(p => `
+    <div class="tagged-chip">
+      <span>@${escapeHTML(p)}</span>
+      <button onclick="removePerson('${escapeHTML(p)}')">×</button>
+    </div>`).join('');
+}
+
+// ── PUBLISH ───────────────────────────────────────
+async function publishPhoto() {
+  const title   = document.getElementById('f-title').value.trim();
+  const caption = document.getElementById('f-caption').value.trim();
+  const location= document.getElementById('f-location').value.trim();
+
+  if (!title) { showToast('Please enter a title for your photo.', 'error'); document.getElementById('f-title').focus(); return; }
+  if (!selectedFiles.length) { showToast('Please select at least one photo.', 'error'); return; }
+
+  const btn = document.getElementById('publish-btn');
+  btn.classList.add('loading'); btn.disabled = true;
+
+  const progress = document.getElementById('upload-progress');
+  progress.classList.add('show');
+
+  // Simulate upload progress (real: use Azure SAS URL + XHR with progress events)
+  let pct = 0;
+  const interval = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 15, 95);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent  = Math.floor(pct) + '%';
+  }, 200);
+
+  try {
+    // 1. Get SAS URL from Azure Functions
+    const file = selectedFiles[0];
+    const ext  = file.name.split('.').pop().toLowerCase();
+    const { sasUrl, publicUrl } = await API.getSasUrl(ext);
+    document.getElementById('progress-label-text').textContent = 'Uploading to Azure Blob Storage…';
+
+    // 2. Upload directly to Azure Blob Storage via SAS URL
+    const uploadRes = await fetch(sasUrl, {
+      method:  'PUT',
+      headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type || 'image/jpeg' },
+      body:    file,
+    });
+    if (!uploadRes.ok) throw new Error('Blob upload failed');
+
+    document.getElementById('progress-fill').style.width = '70%';
+    document.getElementById('progress-label-text').textContent = 'Saving to database…';
+
+    // 3. Save metadata to Cosmos DB via Azure Functions
+    const hashtagMatches = caption.match(/#\w+/g) || [];
+    await API.uploadPhoto({
+      title,
+      description: caption,
+      blobUrl:     publicUrl,
+      category:    selectedFilter || 'abstract',
+      hashtags:    hashtagMatches,
+    });
+
+    clearInterval(interval);
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('progress-pct').textContent  = '100%';
+    document.getElementById('progress-label-text').textContent = '✅ Published!';
+
+    setTimeout(() => {
+      btn.classList.remove('loading'); btn.disabled = false;
+      progress.classList.remove('show');
+      resetForm();
+      loadMyPosts();
+      loadStats();
+      showToast('🎉 Photo published successfully!', 'success');
+    }, 800);
+
+  } catch {
+    clearInterval(interval);
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('progress-pct').textContent  = '—';
+    document.getElementById('progress-label-text').textContent = 'Preview mode — connect Azure backend to publish.';
+    setTimeout(() => {
+      btn.classList.remove('loading'); btn.disabled = false;
+      progress.classList.remove('show');
+      showToast('Preview mode: connect Azure backend to publish.', 'info');
+    }, 1200);
+  }
+}
+
+function resetForm() {
+  document.getElementById('f-title').value   = '';
+  document.getElementById('f-caption').value = '';
+  document.getElementById('f-location').value= '';
+  document.getElementById('f-people').value  = '';
+  document.getElementById('caption-tags').innerHTML = '';
+  document.getElementById('tagged-row').innerHTML   = '';
+  document.getElementById('preview-strip').style.display = 'none';
+  document.getElementById('filter-section').style.display = 'none';
+  taggedPeople   = [];
+  selectedFiles  = [];
+  selectedFilter = 'Original';
+  document.getElementById('drop-zone').querySelector('.drop-zone-icon').textContent = '🖼️';
+  document.getElementById('drop-zone').querySelector('.drop-zone-text').innerHTML =
+    `Drag &amp; drop photos here, or <strong>click to browse</strong><br/><span style="font-size:.8rem">JPG, PNG, WEBP · Max 20 MB each</span>`;
+}
+
+// ── MY POSTS ──────────────────────────────────────
+async function loadMyPosts() {
+  try {
+    const user = await API.me();
+    const data = await API.getUserPhotos(user.id);
+    renderManageList(data.photos || []);
+  } catch {
+    renderManageList([]);
+  }
+}
+
+function renderManageList(photos) {
+  const list = document.getElementById('manage-list');
+  if (!photos.length) {
+    list.innerHTML = `<div class="manage-empty">📷 No posts yet. Upload your first photo above!</div>`;
+    return;
+  }
+  list.innerHTML = photos.map(p => `
+    <div class="manage-list-item">
+      <img class="manage-thumb" src="${p.thumbnailUrl||p.imageUrl}" alt="${escapeHTML(p.title||'')}"/>
+      <div class="manage-info">
+        <div class="manage-title">${escapeHTML(p.title||'Untitled')}</div>
+        <div class="manage-stats">❤️ ${formatNum(p.likes||0)} · 💬 ${formatNum(p.commentCount||0)} · ⭐ ${(p.avgRating||0).toFixed(1)} · ${timeAgo(p.createdAt||new Date())}</div>
+      </div>
+      <div class="manage-actions">
+        <a href="photo.html?id=${p.id}" class="icon-btn" title="View">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </a>
+        <button class="icon-btn del" title="Delete" onclick="openDelConfirm('${p.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+// ── STATS ─────────────────────────────────────────
+async function loadStats() {
+  try {
+    const user = await API.me();
+    document.getElementById('s-posts').textContent    = formatNum(user.postCount    || 0);
+    document.getElementById('s-likes').textContent    = formatNum(user.totalLikes   || 0);
+    document.getElementById('s-comments').textContent = formatNum(user.totalComments|| 0);
+    document.getElementById('s-rating').textContent   = user.avgRating ? user.avgRating.toFixed(1)+'★' : '—';
+  } catch {
+    document.getElementById('s-posts').textContent    = '0';
+    document.getElementById('s-likes').textContent    = '0';
+    document.getElementById('s-comments').textContent = '0';
+    document.getElementById('s-rating').textContent   = '—';
+    document.getElementById('top-photo-wrap').innerHTML =
+      `<div style="text-align:center;padding:20px;color:var(--text-sub);font-size:.84rem">Connect Azure backend to see your top photo.</div>`;
+  }
+}
+
+// ── DELETE ────────────────────────────────────────
+function openDelConfirm(id) { deleteTargetId = id; document.getElementById('del-confirm').classList.add('open'); }
+function closeDelConfirm()  { deleteTargetId = null; document.getElementById('del-confirm').classList.remove('open'); }
+async function confirmDelete() {
+  if (!deleteTargetId) return;
+  try {
+    await API.deletePhoto(deleteTargetId);
+    showToast('🗑️ Photo deleted.', 'success');
+  } catch {
+    showToast('Delete connects to Azure backend.', 'info');
+  }
+  closeDelConfirm();
+  loadMyPosts();
+  loadStats();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDelConfirm(); });
+
+loadStats();
+loadMyPosts();
+</script>
+</body>
+</html>

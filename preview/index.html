@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PixelShare — Design Preview</title>
+<style>
+/* ── RESET & VARIABLES ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:          #fafafa;
+  --surface:     #ffffff;
+  --border:      #dbdbdb;
+  --text:        #262626;
+  --text-sub:    #8e8e8e;
+  --accent:      #e1306c;
+  --accent2:     #833ab4;
+  --accent3:     #fd1d1d;
+  --blue:        #0095f6;
+  --green:       #2ecc71;
+  --grad:        linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+  --radius:      12px;
+  --nav-h:       60px;
+  --shadow:      0 2px 16px rgba(0,0,0,.08);
+  --shadow-lg:   0 8px 40px rgba(0,0,0,.15);
+  --trans:       .2s ease;
+}
+[data-theme="dark"] {
+  --bg:        #000;
+  --surface:   #121212;
+  --border:    #262626;
+  --text:      #fafafa;
+  --text-sub:  #a8a8a8;
+  --shadow:    0 2px 16px rgba(0,0,0,.5);
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+       background: var(--bg); color: var(--text); transition: background var(--trans), color var(--trans); }
+a    { text-decoration: none; color: inherit; }
+img  { display: block; width: 100%; object-fit: cover; }
+button { cursor: pointer; border: none; background: none; color: inherit; }
+
+/* ── SCROLLBAR ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── NAVBAR ─────────────────────────────────────────────────── */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; z-index: 1000; backdrop-filter: blur(10px);
+}
+.nav-logo {
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -1px;
+  background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.nav-search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 14px; width: 260px;
+}
+.nav-search input {
+  border: none; background: none; outline: none; color: var(--text); font-size: .9rem; width: 100%;
+}
+.nav-search svg { flex-shrink: 0; }
+.nav-icons { display: flex; align-items: center; gap: 4px; }
+.nav-btn {
+  width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; transition: background var(--trans); position: relative;
+}
+.nav-btn:hover { background: var(--bg); }
+.nav-badge {
+  position: absolute; top: 4px; right: 4px; width: 16px; height: 16px;
+  background: var(--accent); border-radius: 50%; font-size: .65rem;
+  display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700;
+}
+.avatar-sm {
+  width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border);
+}
+.theme-toggle {
+  width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; transition: background var(--trans); font-size: 1.1rem;
+}
+.theme-toggle:hover { background: var(--bg); }
+
+/* ── TABS (Feed / Explore / Creator) ───────────────────────── */
+.page-tabs {
+  position: fixed; top: var(--nav-h); left: 0; right: 0; z-index: 900;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; gap: 0;
+}
+.tab-btn {
+  flex: 1; padding: 12px; font-size: .9rem; font-weight: 600;
+  color: var(--text-sub); border-bottom: 2px solid transparent;
+  transition: all var(--trans); letter-spacing: .3px;
+}
+.tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
+.tab-btn:hover  { color: var(--text); background: var(--bg); }
+
+/* ── MAIN LAYOUT ────────────────────────────────────────────── */
+.main {
+  margin-top: calc(var(--nav-h) + 44px);
+  max-width: 1100px; margin-left: auto; margin-right: auto;
+  padding: 20px 16px 80px;
+}
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── FEED LAYOUT ────────────────────────────────────────────── */
+.feed-layout { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 28px; }
+.feed-col {}
+
+/* ── STORIES ────────────────────────────────────────────────── */
+.stories-bar {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; display: flex; gap: 18px; overflow-x: auto; margin-bottom: 20px;
+  scrollbar-width: none;
+}
+.stories-bar::-webkit-scrollbar { display: none; }
+.story-item { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; cursor: pointer; }
+.story-ring {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--grad); padding: 2.5px; transition: transform var(--trans);
+}
+.story-ring:hover { transform: scale(1.08); }
+.story-ring-inner {
+  width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+  border: 2.5px solid var(--surface);
+}
+.story-add .story-ring { background: var(--border); }
+.story-add .story-ring-inner {
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; color: var(--blue);
+}
+.story-name { font-size: .72rem; color: var(--text-sub); max-width: 64px; text-align: center;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── PHOTO CARD ─────────────────────────────────────────────── */
+.photo-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 20px; overflow: hidden; transition: box-shadow var(--trans);
+}
+.photo-card:hover { box-shadow: var(--shadow); }
+.card-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.card-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.card-avatar-ring {
+  width: 42px; height: 42px; border-radius: 50%; background: var(--grad);
+  padding: 2px; flex-shrink: 0; cursor: pointer;
+}
+.card-avatar-ring img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--surface); object-fit: cover; }
+.card-user { flex: 1; }
+.card-username { font-weight: 700; font-size: .9rem; }
+.card-meta { font-size: .78rem; color: var(--text-sub); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.card-more { font-size: 1.3rem; color: var(--text-sub); padding: 4px 6px; border-radius: 6px; }
+.card-more:hover { background: var(--bg); }
+
+/* ── PHOTO WRAP ─────────────────────────────────────────────── */
+.card-photo-wrap {
+  position: relative; overflow: hidden; cursor: pointer;
+  aspect-ratio: 4/5; max-height: 520px;
+}
+.card-photo-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+.card-photo-wrap:hover img { transform: scale(1.02); }
+.card-photo-wrap .double-tap-heart {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.heart-burst {
+  font-size: 80px; opacity: 0; transform: scale(0);
+  transition: none; filter: drop-shadow(0 4px 12px rgba(0,0,0,.3));
+}
+.heart-burst.animate {
+  animation: heartBurst .8s ease forwards;
+}
+@keyframes heartBurst {
+  0%   { opacity: 0; transform: scale(0); }
+  15%  { opacity: 1; transform: scale(1.3); }
+  35%  { opacity: 1; transform: scale(1);  }
+  70%  { opacity: 1; transform: scale(1);  }
+  100% { opacity: 0; transform: scale(.8); }
+}
+
+/* ── PERSON TAGS (on photo) ─────────────────────────────────── */
+.person-tags { position: absolute; inset: 0; pointer-events: none; }
+.person-tag {
+  position: absolute; pointer-events: all; cursor: pointer;
+  transform: translate(-50%, -100%);
+}
+.person-tag-dot {
+  width: 10px; height: 10px; background: #fff; border-radius: 50%;
+  border: 2px solid rgba(0,0,0,.3); margin: 0 auto 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+.person-tag-label {
+  background: rgba(0,0,0,.75); color: #fff; padding: 3px 8px;
+  border-radius: 20px; font-size: .72rem; font-weight: 600; white-space: nowrap;
+  backdrop-filter: blur(4px);
+  opacity: 0; transform: translateY(4px); transition: all .15s ease;
+  pointer-events: none;
+}
+.person-tag:hover .person-tag-label { opacity: 1; transform: translateY(0); }
+.tags-visible .person-tag-label { opacity: 1; transform: translateY(0); }
+
+/* ── CARD ACTIONS ───────────────────────────────────────────── */
+.card-actions { display: flex; align-items: center; gap: 4px; padding: 10px 14px 6px; }
+.action-btn {
+  display: flex; align-items: center; gap: 5px; padding: 6px 8px;
+  border-radius: 8px; font-size: .85rem; font-weight: 600; color: var(--text-sub);
+  transition: all var(--trans);
+}
+.action-btn:hover { background: var(--bg); color: var(--text); }
+.action-btn svg { transition: transform var(--trans); }
+.action-btn.liked svg { fill: var(--accent); stroke: var(--accent); }
+.action-btn.liked { color: var(--accent); }
+.action-btn.liked svg { animation: likeJump .3s ease; }
+@keyframes likeJump {
+  0%  { transform: scale(1); }
+  40% { transform: scale(1.4); }
+  70% { transform: scale(.85); }
+  100%{ transform: scale(1); }
+}
+.action-btn.saved { color: var(--text); }
+.action-btn.saved svg { fill: var(--text); }
+.spacer { flex: 1; }
+.rating-stars { display: flex; gap: 2px; padding: 6px 8px; }
+.star { font-size: 1rem; cursor: pointer; transition: transform var(--trans); color: var(--border); }
+.star.filled { color: #f59e0b; }
+.star:hover { transform: scale(1.2); }
+
+/* ── CARD BODY ──────────────────────────────────────────────── */
+.card-body { padding: 4px 14px 14px; }
+.likes-count { font-weight: 700; font-size: .88rem; margin-bottom: 5px; }
+.card-caption { font-size: .88rem; line-height: 1.5; }
+.card-caption .username { font-weight: 700; margin-right: 4px; }
+.hashtag { color: var(--blue); cursor: pointer; }
+.hashtag:hover { text-decoration: underline; }
+.people-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.people-chip {
+  display: flex; align-items: center; gap: 5px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px;
+  font-size: .75rem; font-weight: 600; cursor: pointer; transition: background var(--trans);
+}
+.people-chip:hover { background: var(--border); }
+.people-chip img { width: 18px; height: 18px; border-radius: 50%; }
+.view-comments { color: var(--text-sub); font-size: .85rem; cursor: pointer; margin-top: 5px; }
+.view-comments:hover { color: var(--text); }
+.comment-preview { font-size: .85rem; margin-top: 4px; line-height: 1.5; }
+.comment-preview .username { font-weight: 700; margin-right: 4px; }
+.post-time { color: var(--text-sub); font-size: .75rem; margin-top: 6px; letter-spacing: .3px; }
+
+/* ── COMMENT INPUT ──────────────────────────────────────────── */
+.comment-input-row {
+  border-top: 1px solid var(--border); padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.comment-input-row input {
+  flex: 1; border: none; background: none; outline: none;
+  font-size: .88rem; color: var(--text);
+}
+.comment-input-row input::placeholder { color: var(--text-sub); }
+.post-btn { color: var(--blue); font-weight: 700; font-size: .88rem; padding: 2px 4px; }
+.post-btn:hover { opacity: .7; }
+
+/* ── SIDEBAR ────────────────────────────────────────────────── */
+.sidebar { position: sticky; top: calc(var(--nav-h) + 60px); height: fit-content; }
+.sidebar-profile {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; margin-bottom: 16px;
+}
+.sidebar-profile-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.sidebar-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+.sidebar-name { font-weight: 700; font-size: .95rem; }
+.sidebar-handle { color: var(--text-sub); font-size: .82rem; margin-top: 1px; }
+.sidebar-follow-btn {
+  background: var(--blue); color: #fff; border-radius: 8px;
+  padding: 8px 18px; font-weight: 700; font-size: .85rem; transition: opacity var(--trans);
+}
+.sidebar-follow-btn:hover { opacity: .85; }
+.sidebar-stats { display: flex; gap: 0; border-top: 1px solid var(--border); padding-top: 14px; }
+.stat-item { flex: 1; text-align: center; }
+.stat-num { font-weight: 700; font-size: 1rem; }
+.stat-label { color: var(--text-sub); font-size: .75rem; }
+.sidebar-suggestions {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px;
+}
+.sugg-title { font-weight: 700; font-size: .88rem; color: var(--text-sub); margin-bottom: 12px; letter-spacing: .5px; }
+.sugg-item { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.sugg-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.sugg-info { flex: 1; }
+.sugg-name { font-weight: 700; font-size: .85rem; }
+.sugg-sub { color: var(--text-sub); font-size: .78rem; }
+.sugg-follow { color: var(--blue); font-weight: 700; font-size: .82rem; }
+.sugg-follow:hover { color: var(--text); }
+.trending-tags {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; margin-top: 16px;
+}
+.tag-item { display: flex; align-items: center; gap: 10px; padding: 8px 0;
+            border-bottom: 1px solid var(--border); cursor: pointer; transition: color var(--trans); }
+.tag-item:last-child { border-bottom: none; }
+.tag-item:hover { color: var(--blue); }
+.tag-rank { font-size: .75rem; color: var(--text-sub); width: 20px; font-weight: 700; }
+.tag-info { flex: 1; }
+.tag-name { font-weight: 700; font-size: .88rem; }
+.tag-count { font-size: .75rem; color: var(--text-sub); }
+.tag-fire { font-size: 1rem; }
+
+/* ── EXPLORE PAGE ───────────────────────────────────────────── */
+.explore-search-bar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.explore-search {
+  flex: 1; display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 16px;
+}
+.explore-search input { flex: 1; border: none; background: none; outline: none; font-size: .95rem; color: var(--text); }
+.filter-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.filter-chip {
+  padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+  font-size: .82rem; font-weight: 600; cursor: pointer; transition: all var(--trans);
+  background: var(--surface); color: var(--text-sub);
+}
+.filter-chip:hover, .filter-chip.active {
+  background: var(--text); color: var(--surface);
+  border-color: var(--text);
+}
+.masonry {
+  columns: 3; column-gap: 4px;
+}
+.masonry-item {
+  break-inside: avoid; margin-bottom: 4px; position: relative;
+  cursor: pointer; overflow: hidden; border-radius: 4px;
+}
+.masonry-item img { width: 100%; display: block; transition: transform .3s ease; }
+.masonry-item:hover img { transform: scale(1.04); }
+.masonry-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  opacity: 0; transition: opacity .2s ease; color: #fff; font-weight: 700; font-size: .95rem;
+}
+.masonry-item:hover .masonry-overlay { opacity: 1; }
+.masonry-stat { display: flex; align-items: center; gap: 5px; }
+
+/* ── CREATOR PAGE ───────────────────────────────────────────── */
+.creator-layout { display: grid; grid-template-columns: 1fr 340px; gap: 28px; }
+.upload-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px;
+}
+.upload-card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius); padding: 50px 20px;
+  text-align: center; cursor: pointer; transition: all var(--trans); margin-bottom: 24px;
+  background: var(--bg);
+}
+.drop-zone:hover { border-color: var(--blue); background: rgba(0,149,246,.04); }
+.drop-zone-icon { font-size: 3rem; margin-bottom: 10px; }
+.drop-zone p { color: var(--text-sub); font-size: .9rem; }
+.drop-zone strong { color: var(--blue); }
+.filter-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; scrollbar-width: none; }
+.filter-strip::-webkit-scrollbar { display: none; }
+.filter-option {
+  flex-shrink: 0; cursor: pointer; text-align: center;
+  border: 2px solid transparent; border-radius: 10px; overflow: hidden; transition: border-color var(--trans);
+}
+.filter-option.active { border-color: var(--blue); }
+.filter-option img { width: 72px; height: 72px; object-fit: cover; }
+.filter-option span { display: block; font-size: .72rem; padding: 4px; color: var(--text-sub); font-weight: 600; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-weight: 700; font-size: .85rem; margin-bottom: 6px; color: var(--text-sub); }
+.form-group input, .form-group textarea {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; font-size: .9rem; color: var(--text); outline: none; transition: border-color var(--trans);
+  font-family: inherit;
+}
+.form-group input:focus, .form-group textarea:focus { border-color: var(--blue); }
+.form-group textarea { resize: none; height: 90px; }
+.people-input-wrap { position: relative; }
+.people-input-wrap input { padding-right: 40px; }
+.people-add-btn {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--blue); font-weight: 700; font-size: .85rem;
+}
+.tagged-people { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tagged-chip {
+  display: flex; align-items: center; gap: 6px; background: rgba(0,149,246,.1);
+  border: 1px solid rgba(0,149,246,.3); border-radius: 20px; padding: 4px 10px;
+  font-size: .78rem; font-weight: 600; color: var(--blue);
+}
+.tagged-chip button { color: var(--text-sub); font-size: .9rem; margin-left: 2px; }
+.publish-btn {
+  width: 100%; background: var(--grad); color: #fff; border-radius: 10px;
+  padding: 13px; font-weight: 700; font-size: 1rem; transition: opacity var(--trans);
+  border: none; cursor: pointer; letter-spacing: .5px;
+}
+.publish-btn:hover { opacity: .9; }
+.creator-stats {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; margin-bottom: 16px;
+}
+.creator-stats h3 { font-size: .9rem; font-weight: 700; margin-bottom: 14px; color: var(--text-sub); letter-spacing: .5px; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat-card {
+  background: var(--bg); border-radius: 10px; padding: 14px;
+  text-align: center; border: 1px solid var(--border);
+}
+.stat-card-num { font-size: 1.5rem; font-weight: 700; }
+.stat-card-num.pink { color: var(--accent); }
+.stat-card-num.blue { color: var(--blue); }
+.stat-card-num.green { color: var(--green); }
+.stat-card-num.purple { color: var(--accent2); }
+.stat-card-label { font-size: .75rem; color: var(--text-sub); margin-top: 2px; }
+.recent-posts { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.recent-posts h3 { font-size: .9rem; font-weight: 700; margin-bottom: 14px; color: var(--text-sub); }
+.recent-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+.recent-thumb { aspect-ratio: 1; overflow: hidden; border-radius: 6px; cursor: pointer; }
+.recent-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.recent-thumb:hover img { transform: scale(1.08); }
+
+/* ── MODAL ──────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  display: none; align-items: center; justify-content: center;
+  z-index: 2000; padding: 20px; backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: var(--radius); overflow: hidden;
+  display: grid; grid-template-columns: 1fr 380px;
+  max-width: 940px; width: 100%; max-height: 90vh; box-shadow: var(--shadow-lg);
+  animation: modalIn .25s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.modal-photo { position: relative; overflow: hidden; background: #000; }
+.modal-photo img { width: 100%; height: 100%; object-fit: contain; }
+.modal-right { display: flex; flex-direction: column; overflow: hidden; }
+.modal-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.modal-close { margin-left: auto; color: var(--text-sub); font-size: 1.2rem; padding: 4px 8px; border-radius: 6px; }
+.modal-close:hover { background: var(--bg); }
+.modal-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+.modal-caption { font-size: .88rem; line-height: 1.6; margin-bottom: 10px; }
+.modal-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.meta-pill {
+  display: flex; align-items: center; gap: 5px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; font-size: .78rem;
+}
+.modal-comments { border-top: 1px solid var(--border); padding-top: 10px; }
+.modal-comment { display: flex; gap: 8px; margin-bottom: 12px; font-size: .85rem; line-height: 1.5; }
+.modal-comment img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.modal-actions { border-top: 1px solid var(--border); padding: 10px 16px; }
+.modal-actions-row { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+.modal-likes { font-weight: 700; font-size: .88rem; margin-bottom: 4px; }
+.modal-stars { display: flex; gap: 3px; }
+.modal-stars .star { font-size: 1.1rem; }
+
+/* ── TOAST ──────────────────────────────────────────────────── */
+.toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--text); color: var(--surface); padding: 12px 18px;
+  border-radius: 10px; font-size: .88rem; font-weight: 600; box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; gap: 8px;
+  animation: toastIn .3s ease;
+  max-width: 300px;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.toast.fade-out { animation: toastOut .3s ease forwards; }
+@keyframes toastOut {
+  to { opacity: 0; transform: translateY(16px); }
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .feed-layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .creator-layout { grid-template-columns: 1fr; }
+  .masonry { columns: 2; }
+  .modal { grid-template-columns: 1fr; }
+  .modal-photo { display: none; }
+}
+
+/* ── SKELETON ───────────────────────────────────────────────── */
+.skeleton { background: linear-gradient(90deg, var(--border) 25%, var(--bg) 50%, var(--border) 75%);
+            background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <span class="nav-logo">PixelShare</span>
+  <div class="nav-search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="text" placeholder="Search photos, hashtags, people…"/>
+  </div>
+  <div class="nav-icons">
+    <button class="nav-btn" onclick="showToast('🔔 No new notifications')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="nav-badge">3</span>
+    </button>
+    <button class="nav-btn" onclick="showToast('📨 Messages coming soon')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="nav-badge">1</span>
+    </button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+    <img class="avatar-sm" src="https://i.pravatar.cc/150?img=12" alt="You" style="cursor:pointer" onclick="showTab('creator')"/>
+  </div>
+</nav>
+
+<!-- ── TABS ── -->
+<div class="page-tabs" style="top:60px">
+  <button class="tab-btn active" onclick="showTab('feed')">🏠 Feed</button>
+  <button class="tab-btn" onclick="showTab('explore')">🔍 Explore</button>
+  <button class="tab-btn" onclick="showTab('creator')">➕ Creator Studio</button>
+</div>
+
+<!-- ══════════ FEED PAGE ══════════ -->
+<div class="main">
+<div id="page-feed" class="page active">
+  <div class="feed-layout">
+    <div class="feed-col">
+
+      <!-- STORIES -->
+      <div class="stories-bar">
+        <div class="story-item story-add">
+          <div class="story-ring"><div class="story-ring-inner">+</div></div>
+          <span class="story-name">Your Story</span>
+        </div>
+        <div class="story-item" onclick="showToast('📸 Story by @alex')">
+          <div class="story-ring"><div class="story-ring-inner"><img src="https://i.pravatar.cc/150?img=1" alt=""/></div></div>
+          <span class="story-name">alex</span>
+        </div>
+        <div class="story-item" onclick="showToast('📸 Story by @sophie')">
+          <div class="story-ring"><div class="story-ring-inner"><img src="https://i.pravatar.cc/150?img=5" alt=""/></div></div>
+          <span class="story-name">sophie</span>
+        </div>
+        <div class="story-item" onclick="showToast('📸 Story by @mike')">
+          <div class="story-ring"><div class="story-ring-inner"><img src="https://i.pravatar.cc/150?img=8" alt=""/></div></div>
+          <span class="story-name">mike</span>
+        </div>
+        <div class="story-item" onclick="showToast('📸 Story by @priya')">
+          <div class="story-ring"><div class="story-ring-inner"><img src="https://i.pravatar.cc/150?img=20" alt=""/></div></div>
+          <span class="story-name">priya</span>
+        </div>
+        <div class="story-item" onclick="showToast('📸 Story by @carlos')">
+          <div class="story-ring"><div class="story-ring-inner"><img src="https://i.pravatar.cc/150?img=33" alt=""/></div></div>
+          <span class="story-name">carlos</span>
+        </div>
+        <div class="story-item" onclick="showToast('📸 Story by @yuki')">
+          <div class="story-ring"><div class="story-ring-inner"><img src="https://i.pravatar.cc/150?img=47" alt=""/></div></div>
+          <span class="story-name">yuki</span>
+        </div>
+        <div class="story-item" onclick="showToast('📸 Story by @nina')">
+          <div class="story-ring"><div class="story-ring-inner"><img src="https://i.pravatar.cc/150?img=44" alt=""/></div></div>
+          <span class="story-name">nina</span>
+        </div>
+      </div>
+
+      <!-- CARD 1 -->
+      <div class="photo-card" id="card1">
+        <div class="card-header">
+          <div class="card-avatar-ring"><img src="https://i.pravatar.cc/150?img=1" alt="alex"/></div>
+          <div class="card-user">
+            <div class="card-username">alex.captures</div>
+            <div class="card-meta">📍 Santorini, Greece · 2h ago</div>
+          </div>
+          <button class="card-more">···</button>
+        </div>
+        <div class="card-photo-wrap" id="wrap1" ondblclick="doubleTapLike('card1','wrap1')">
+          <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=600&q=80" alt="Santorini"/>
+          <div class="double-tap-heart"><span class="heart-burst" id="burst1">❤️</span></div>
+          <div class="person-tags" id="tags1">
+            <div class="person-tag" style="left:30%;top:55%" onmouseenter="this.parentElement.classList.add('tags-visible')" onmouseleave="this.parentElement.classList.remove('tags-visible')">
+              <div class="person-tag-dot"></div>
+              <div class="person-tag-label">@sophie_wade</div>
+            </div>
+            <div class="person-tag" style="left:62%;top:48%" onmouseenter="this.parentElement.classList.add('tags-visible')" onmouseleave="this.parentElement.classList.remove('tags-visible')">
+              <div class="person-tag-dot"></div>
+              <div class="person-tag-label">@mike_travels</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="action-btn" id="like-card1" onclick="toggleLike('card1')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span id="like-count-card1">1,284</span>
+          </button>
+          <button class="action-btn" onclick="openModal()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>34</span>
+          </button>
+          <button class="action-btn" onclick="showToast('🔗 Link copied to clipboard!')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </button>
+          <div class="spacer"></div>
+          <div class="rating-stars" id="rating-card1">
+            <span class="star filled" onclick="setRating('card1',1)">★</span>
+            <span class="star filled" onclick="setRating('card1',2)">★</span>
+            <span class="star filled" onclick="setRating('card1',3)">★</span>
+            <span class="star filled" onclick="setRating('card1',4)">★</span>
+            <span class="star" onclick="setRating('card1',5)">★</span>
+          </div>
+          <button class="action-btn" id="save-card1" onclick="toggleSave('card1')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="likes-count">1,284 likes</div>
+          <div class="card-caption">
+            <span class="username">alex.captures</span>
+            Golden hour magic in Santorini 🌅 Nothing beats these views.
+            <span class="hashtag">#travel</span> <span class="hashtag">#greece</span> <span class="hashtag">#sunset</span>
+          </div>
+          <div class="people-chips">
+            <div class="people-chip"><img src="https://i.pravatar.cc/150?img=5" alt=""/> @sophie_wade</div>
+            <div class="people-chip"><img src="https://i.pravatar.cc/150?img=8" alt=""/> @mike_travels</div>
+          </div>
+          <div class="view-comments" onclick="openModal()">View all 34 comments</div>
+          <div class="comment-preview"><span class="username">priya_lens</span> Absolutely stunning! 😍</div>
+          <div class="post-time">2 HOURS AGO</div>
+        </div>
+        <div class="comment-input-row">
+          <img class="card-avatar" src="https://i.pravatar.cc/150?img=12" alt="You"/>
+          <input type="text" placeholder="Add a comment…" onkeydown="postComment(event,'card1')"/>
+          <button class="post-btn">Post</button>
+        </div>
+      </div>
+
+      <!-- CARD 2 -->
+      <div class="photo-card" id="card2">
+        <div class="card-header">
+          <div class="card-avatar-ring"><img src="https://i.pravatar.cc/150?img=20" alt="priya"/></div>
+          <div class="card-user">
+            <div class="card-username">priya.lens</div>
+            <div class="card-meta">📍 Tokyo, Japan · 5h ago</div>
+          </div>
+          <button class="card-more">···</button>
+        </div>
+        <div class="card-photo-wrap" id="wrap2" ondblclick="doubleTapLike('card2','wrap2')">
+          <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80" alt="Tokyo"/>
+          <div class="double-tap-heart"><span class="heart-burst" id="burst2">❤️</span></div>
+          <div class="person-tags" id="tags2">
+            <div class="person-tag" style="left:48%;top:40%" onmouseenter="this.parentElement.classList.add('tags-visible')" onmouseleave="this.parentElement.classList.remove('tags-visible')">
+              <div class="person-tag-dot"></div>
+              <div class="person-tag-label">@yuki_photo</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="action-btn liked" id="like-card2" onclick="toggleLike('card2')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span id="like-count-card2">3,871</span>
+          </button>
+          <button class="action-btn" onclick="showToast('💬 Comments loaded')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>89</span>
+          </button>
+          <button class="action-btn" onclick="showToast('🔗 Link copied!')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </button>
+          <div class="spacer"></div>
+          <div class="rating-stars" id="rating-card2">
+            <span class="star filled" onclick="setRating('card2',1)">★</span>
+            <span class="star filled" onclick="setRating('card2',2)">★</span>
+            <span class="star filled" onclick="setRating('card2',3)">★</span>
+            <span class="star filled" onclick="setRating('card2',4)">★</span>
+            <span class="star filled" onclick="setRating('card2',5)">★</span>
+          </div>
+          <button class="action-btn saved" id="save-card2" onclick="toggleSave('card2')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="likes-count">3,871 likes</div>
+          <div class="card-caption">
+            <span class="username">priya.lens</span>
+            Shibuya crossing at night is pure magic ✨ The energy of this city is unreal.
+            <span class="hashtag">#tokyo</span> <span class="hashtag">#japan</span> <span class="hashtag">#nightphotography</span> <span class="hashtag">#streetphotography</span>
+          </div>
+          <div class="people-chips">
+            <div class="people-chip"><img src="https://i.pravatar.cc/150?img=47" alt=""/> @yuki_photo</div>
+          </div>
+          <div class="view-comments" onclick="showToast('💬 89 comments loaded')">View all 89 comments</div>
+          <div class="comment-preview"><span class="username">carlos_shots</span> Tokyo on my bucket list now! 🗼</div>
+          <div class="post-time">5 HOURS AGO</div>
+        </div>
+        <div class="comment-input-row">
+          <img class="card-avatar" src="https://i.pravatar.cc/150?img=12" alt="You"/>
+          <input type="text" placeholder="Add a comment…" onkeydown="postComment(event,'card2')"/>
+          <button class="post-btn">Post</button>
+        </div>
+      </div>
+
+      <!-- CARD 3 -->
+      <div class="photo-card" id="card3">
+        <div class="card-header">
+          <div class="card-avatar-ring"><img src="https://i.pravatar.cc/150?img=33" alt="carlos"/></div>
+          <div class="card-user">
+            <div class="card-username">carlos.shots</div>
+            <div class="card-meta">📍 Patagonia, Argentina · 1d ago</div>
+          </div>
+          <button class="card-more">···</button>
+        </div>
+        <div class="card-photo-wrap" id="wrap3" ondblclick="doubleTapLike('card3','wrap3')">
+          <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=600&q=80" alt="Patagonia"/>
+          <div class="double-tap-heart"><span class="heart-burst" id="burst3">❤️</span></div>
+        </div>
+        <div class="card-actions">
+          <button class="action-btn" id="like-card3" onclick="toggleLike('card3')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span id="like-count-card3">892</span>
+          </button>
+          <button class="action-btn" onclick="showToast('💬 Comments loaded')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>21</span>
+          </button>
+          <button class="action-btn" onclick="showToast('🔗 Link copied!')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </button>
+          <div class="spacer"></div>
+          <div class="rating-stars" id="rating-card3">
+            <span class="star filled" onclick="setRating('card3',1)">★</span>
+            <span class="star filled" onclick="setRating('card3',2)">★</span>
+            <span class="star filled" onclick="setRating('card3',3)">★</span>
+            <span class="star" onclick="setRating('card3',4)">★</span>
+            <span class="star" onclick="setRating('card3',5)">★</span>
+          </div>
+          <button class="action-btn" id="save-card3" onclick="toggleSave('card3')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="likes-count">892 likes</div>
+          <div class="card-caption">
+            <span class="username">carlos.shots</span>
+            The raw wilderness of Patagonia left me speechless 🏔️ 3 weeks, 1200km, zero regrets.
+            <span class="hashtag">#patagonia</span> <span class="hashtag">#adventure</span> <span class="hashtag">#landscape</span>
+          </div>
+          <div class="view-comments" onclick="showToast('💬 21 comments loaded')">View all 21 comments</div>
+          <div class="comment-preview"><span class="username">alex.captures</span> This is absolute fire 🔥</div>
+          <div class="post-time">1 DAY AGO</div>
+        </div>
+        <div class="comment-input-row">
+          <img class="card-avatar" src="https://i.pravatar.cc/150?img=12" alt="You"/>
+          <input type="text" placeholder="Add a comment…" onkeydown="postComment(event,'card3')"/>
+          <button class="post-btn">Post</button>
+        </div>
+      </div>
+
+    </div><!-- /feed-col -->
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-profile">
+        <div class="sidebar-profile-top">
+          <img class="sidebar-avatar" src="https://i.pravatar.cc/150?img=12" alt="You"/>
+          <div>
+            <div class="sidebar-name">Jamie Rivera</div>
+            <div class="sidebar-handle">@jamie.rivera · Consumer</div>
+          </div>
+          <button class="sidebar-follow-btn" onclick="showToast('✅ Profile updated')">Edit</button>
+        </div>
+        <div class="sidebar-stats">
+          <div class="stat-item"><div class="stat-num">47</div><div class="stat-label">Saved</div></div>
+          <div class="stat-item"><div class="stat-num">213</div><div class="stat-label">Liked</div></div>
+          <div class="stat-item"><div class="stat-num">89</div><div class="stat-label">Comments</div></div>
+        </div>
+      </div>
+
+      <div class="sidebar-suggestions">
+        <div class="sugg-title">SUGGESTED FOR YOU</div>
+        <div class="sugg-item">
+          <img class="sugg-avatar" src="https://i.pravatar.cc/150?img=44" alt="nina"/>
+          <div class="sugg-info">
+            <div class="sugg-name">nina.pixels</div>
+            <div class="sugg-sub">Followed by priya.lens</div>
+          </div>
+          <button class="sugg-follow" onclick="showToast('✅ Following nina.pixels')">Follow</button>
+        </div>
+        <div class="sugg-item">
+          <img class="sugg-avatar" src="https://i.pravatar.cc/150?img=50" alt="david"/>
+          <div class="sugg-info">
+            <div class="sugg-name">david.frames</div>
+            <div class="sugg-sub">New to PixelShare</div>
+          </div>
+          <button class="sugg-follow" onclick="showToast('✅ Following david.frames')">Follow</button>
+        </div>
+        <div class="sugg-item">
+          <img class="sugg-avatar" src="https://i.pravatar.cc/150?img=60" alt="luna"/>
+          <div class="sugg-info">
+            <div class="sugg-name">luna.vista</div>
+            <div class="sugg-sub">3 mutual followers</div>
+          </div>
+          <button class="sugg-follow" onclick="showToast('✅ Following luna.vista')">Follow</button>
+        </div>
+      </div>
+
+      <div class="trending-tags">
+        <div class="sugg-title">TRENDING HASHTAGS</div>
+        <div class="tag-item" onclick="showToast('🔍 Searching #travel...')">
+          <div class="tag-rank">1</div>
+          <div class="tag-info"><div class="tag-name">#travel</div><div class="tag-count">24.8k posts</div></div>
+          <span class="tag-fire">🔥</span>
+        </div>
+        <div class="tag-item" onclick="showToast('🔍 Searching #sunset...')">
+          <div class="tag-rank">2</div>
+          <div class="tag-info"><div class="tag-name">#sunset</div><div class="tag-count">18.2k posts</div></div>
+          <span class="tag-fire">🔥</span>
+        </div>
+        <div class="tag-item" onclick="showToast('🔍 Searching #streetphotography...')">
+          <div class="tag-rank">3</div>
+          <div class="tag-info"><div class="tag-name">#streetphoto</div><div class="tag-count">12.1k posts</div></div>
+          <span class="tag-fire">📈</span>
+        </div>
+        <div class="tag-item" onclick="showToast('🔍 Searching #landscape...')">
+          <div class="tag-rank">4</div>
+          <div class="tag-info"><div class="tag-name">#landscape</div><div class="tag-count">9.4k posts</div></div>
+          <span class="tag-fire">📈</span>
+        </div>
+        <div class="tag-item" onclick="showToast('🔍 Searching #portrait...')">
+          <div class="tag-rank">5</div>
+          <div class="tag-info"><div class="tag-name">#portrait</div><div class="tag-count">7.7k posts</div></div>
+          <span class="tag-fire">⭐</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ══════════ EXPLORE PAGE ══════════ -->
+<div id="page-explore" class="page">
+  <div class="explore-search-bar">
+    <div class="explore-search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search by photo, hashtag, location or person…" oninput="exploreSearch(this.value)"/>
+    </div>
+  </div>
+  <div class="filter-chips">
+    <button class="filter-chip active" onclick="setFilter(this,'All')">All</button>
+    <button class="filter-chip" onclick="setFilter(this,'Travel')">✈️ Travel</button>
+    <button class="filter-chip" onclick="setFilter(this,'Nature')">🌿 Nature</button>
+    <button class="filter-chip" onclick="setFilter(this,'Urban')">🏙️ Urban</button>
+    <button class="filter-chip" onclick="setFilter(this,'Portrait')">🧑‍🎨 Portrait</button>
+    <button class="filter-chip" onclick="setFilter(this,'Food')">🍜 Food</button>
+    <button class="filter-chip" onclick="setFilter(this,'Architecture')">🏛️ Architecture</button>
+    <button class="filter-chip" onclick="setFilter(this,'Night')">🌙 Night</button>
+  </div>
+  <div class="masonry" id="masonry-grid">
+    <div class="masonry-item" onclick="openModal()">
+      <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80" alt="mountain"/>
+      <div class="masonry-overlay">
+        <div class="masonry-stat">❤️ 2.1k</div>
+        <div class="masonry-stat">💬 45</div>
+      </div>
+    </div>
+    <div class="masonry-item" onclick="showToast('🖼️ Photo opened')">
+      <img src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=400&q=80" alt="people"/>
+      <div class="masonry-overlay">
+        <div class="masonry-stat">❤️ 876</div>
+        <div class="masonry-stat">💬 12</div>
+      </div>
+    </div>
+    <div class="masonry-item" onclick="showToast('🖼️ Photo opened')">
+      <img src="https://images.unsplash.com/photo-1491557345352-5929e343eb89?w=400&q=80" alt="nature"/>
+      <div class="masonry-overlay">
+        <div class="masonry-stat">❤️ 4.3k</div>
+        <div class="masonry-stat">💬 98</div>
+      </div>
+    </div>
+    <div class="masonry-item" onclick="showToast('🖼️ Photo opened')">
+      <img src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80" alt="city"/>
+      <div class="masonry-overlay">
+        <div class="masonry-stat">❤️ 1.5k</div>
+        <div class="masonry-stat">💬 29</div>
+      </div>
+    </div>
+    <div class="masonry-item" onclick="showToast('🖼️ Photo opened')">
+      <img src="https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=400&q=80" alt="portrait"/>
+      <div class="masonry-overlay">
+        <div class="masonry-stat">❤️ 3.2k</div>
+        <div class="masonry-stat">💬 67</div>
+      </div>
+    </div>
+    <div class="masonry-item" onclick="showToast('🖼️ Photo opened')">
+      <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=80" alt="landscape"/>
+      <div class="masonry-overlay">
+        <div class="masonry-stat">❤️ 892</div>
+        <div class="masonry-stat">💬 21</div>
+      </div>
+    </div>
+    <div class="masonry-item" onclick="showToast('🖼️ Photo opened')">
+      <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=80" alt="tokyo"/>
+      <div class="masonry-overlay">
+        <div class="masonry-stat">❤️ 3.8k</div>
+        <div class="masonry-stat">💬 89</div>
+      </div>
+    </div>
+    <div class="masonry-item" onclick="showToast('🖼️ Photo opened')">
+      <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80" alt="mountains2"/>
+      <div class="masonry-overlay">
+        <div class="masonry-stat">❤️ 1.1k</div>
+        <div class="masonry-stat">💬 33</div>
+      </div>
+    </div>
+    <div class="masonry-item" onclick="showToast('🖼️ Photo opened')">
+      <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80" alt="food"/>
+      <div class="masonry-overlay">
+        <div class="masonry-stat">❤️ 657</div>
+        <div class="masonry-stat">💬 8</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CREATOR PAGE ══════════ -->
+<div id="page-creator" class="page">
+  <div class="creator-layout">
+    <div>
+      <div class="upload-card">
+        <h2>📸 New Post</h2>
+        <div class="drop-zone" onclick="showToast('📂 File picker opened')">
+          <div class="drop-zone-icon">🖼️</div>
+          <p>Drag & drop your photo here or <strong>browse</strong></p>
+          <p style="margin-top:6px;font-size:.8rem">JPG, PNG, WEBP — max 20MB</p>
+        </div>
+
+        <!-- Filter Strip -->
+        <div style="margin-bottom:8px;font-weight:700;font-size:.85rem;color:var(--text-sub)">FILTER</div>
+        <div class="filter-strip">
+          <div class="filter-option active" onclick="selectFilter(this,'Original')">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=80&q=80" style="filter:none" alt="Original"/>
+            <span>Original</span>
+          </div>
+          <div class="filter-option" onclick="selectFilter(this,'Moon')">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=80&q=80" style="filter:grayscale(100%)" alt="Moon"/>
+            <span>Moon</span>
+          </div>
+          <div class="filter-option" onclick="selectFilter(this,'Clarendon')">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=80&q=80" style="filter:contrast(1.2) saturate(1.35)" alt="Clarendon"/>
+            <span>Clarendon</span>
+          </div>
+          <div class="filter-option" onclick="selectFilter(this,'Juno')">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=80&q=80" style="filter:sepia(.35) contrast(1.1) brightness(1.1)" alt="Juno"/>
+            <span>Juno</span>
+          </div>
+          <div class="filter-option" onclick="selectFilter(this,'Lo-Fi')">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=80&q=80" style="filter:saturate(1.4) contrast(1.1)" alt="Lo-Fi"/>
+            <span>Lo-Fi</span>
+          </div>
+          <div class="filter-option" onclick="selectFilter(this,'Warm')">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=80&q=80" style="filter:sepia(.6) brightness(1.05)" alt="Warm"/>
+            <span>Warm</span>
+          </div>
+          <div class="filter-option" onclick="selectFilter(this,'Cold')">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=80&q=80" style="filter:hue-rotate(30deg) saturate(.9)" alt="Cold"/>
+            <span>Cold</span>
+          </div>
+          <div class="filter-option" onclick="selectFilter(this,'Vivid')">
+            <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=80&q=80" style="filter:saturate(2) contrast(1.1)" alt="Vivid"/>
+            <span>Vivid</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>TITLE</label>
+          <input type="text" placeholder="Give your photo a title…"/>
+        </div>
+        <div class="form-group">
+          <label>CAPTION</label>
+          <textarea placeholder="Write a caption… use #hashtags"></textarea>
+        </div>
+        <div class="form-group">
+          <label>LOCATION</label>
+          <input type="text" placeholder="📍 Add location…"/>
+        </div>
+        <div class="form-group">
+          <label>TAG PEOPLE</label>
+          <div class="people-input-wrap">
+            <input type="text" id="people-input" placeholder="Type a username and press Enter…" onkeydown="addPerson(event)"/>
+            <button class="people-add-btn" onclick="addPersonBtn()">+ Add</button>
+          </div>
+          <div class="tagged-people" id="tagged-people">
+            <div class="tagged-chip">
+              <span>@sophie_wade</span>
+              <button onclick="this.parentElement.remove(); showToast('👤 Tag removed')">×</button>
+            </div>
+            <div class="tagged-chip">
+              <span>@mike_travels</span>
+              <button onclick="this.parentElement.remove(); showToast('👤 Tag removed')">×</button>
+            </div>
+          </div>
+        </div>
+        <button class="publish-btn" onclick="showToast('🚀 Photo published successfully!')">Publish Photo</button>
+      </div>
+    </div>
+
+    <!-- Creator Sidebar -->
+    <div>
+      <div class="creator-stats">
+        <h3>YOUR STATS</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-num pink">3,847</div>
+            <div class="stat-card-label">Total Likes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-num blue">142</div>
+            <div class="stat-card-label">Comments</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-num green">28</div>
+            <div class="stat-card-label">Posts</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-num purple">4.6★</div>
+            <div class="stat-card-label">Avg Rating</div>
+          </div>
+        </div>
+      </div>
+      <div class="recent-posts">
+        <h3>RECENT POSTS</h3>
+        <div class="recent-grid">
+          <div class="recent-thumb" onclick="showToast('🖼️ Opening post...')"><img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=120&q=80" alt=""/></div>
+          <div class="recent-thumb" onclick="showToast('🖼️ Opening post...')"><img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=120&q=80" alt=""/></div>
+          <div class="recent-thumb" onclick="showToast('🖼️ Opening post...')"><img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=120&q=80" alt=""/></div>
+          <div class="recent-thumb" onclick="showToast('🖼️ Opening post...')"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=120&q=80" alt=""/></div>
+          <div class="recent-thumb" onclick="showToast('🖼️ Opening post...')"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=120&q=80" alt=""/></div>
+          <div class="recent-thumb" onclick="showToast('🖼️ Opening post...')"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=120&q=80" alt=""/></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /main -->
+
+<!-- ══════════ PHOTO DETAIL MODAL ══════════ -->
+<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-photo">
+      <img src="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&q=80" alt="Santorini"/>
+    </div>
+    <div class="modal-right">
+      <div class="modal-header">
+        <div class="card-avatar-ring" style="width:38px;height:38px"><img src="https://i.pravatar.cc/150?img=1" alt="alex"/></div>
+        <div>
+          <div style="font-weight:700;font-size:.9rem">alex.captures</div>
+          <div style="font-size:.78rem;color:var(--text-sub)">📍 Santorini, Greece</div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-caption">
+          <span class="username" style="font-weight:700">alex.captures</span>
+          Golden hour magic in Santorini 🌅 Nothing beats these views.
+          <span class="hashtag">#travel</span> <span class="hashtag">#greece</span> <span class="hashtag">#sunset</span>
+        </div>
+        <div class="modal-meta">
+          <div class="meta-pill">👥 @sophie_wade</div>
+          <div class="meta-pill">👥 @mike_travels</div>
+          <div class="meta-pill">📍 Santorini</div>
+          <div class="meta-pill">🕐 2 hours ago</div>
+        </div>
+        <div class="modal-comments">
+          <div class="modal-comment">
+            <img src="https://i.pravatar.cc/150?img=20" alt="priya"/>
+            <div><span style="font-weight:700">priya.lens</span> Absolutely stunning! 😍 The colours are incredible.</div>
+          </div>
+          <div class="modal-comment">
+            <img src="https://i.pravatar.cc/150?img=33" alt="carlos"/>
+            <div><span style="font-weight:700">carlos.shots</span> Santorini is on my bucket list now 🏖️</div>
+          </div>
+          <div class="modal-comment">
+            <img src="https://i.pravatar.cc/150?img=47" alt="yuki"/>
+            <div><span style="font-weight:700">yuki.photo</span> Perfect composition! What camera did you use?</div>
+          </div>
+          <div class="modal-comment">
+            <img src="https://i.pravatar.cc/150?img=44" alt="nina"/>
+            <div><span style="font-weight:700">nina.pixels</span> This could be a magazine cover 🤩</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <div class="modal-actions-row">
+          <button class="action-btn" id="modal-like" onclick="toggleLike('modal')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+          <button class="action-btn" onclick="showToast('🔗 Link copied!')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </button>
+          <div class="spacer"></div>
+          <div class="modal-stars">
+            <span class="star filled">★</span><span class="star filled">★</span>
+            <span class="star filled">★</span><span class="star filled">★</span>
+            <span class="star">★</span>
+          </div>
+          <button class="action-btn" id="modal-save" onclick="toggleSave('modal')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+        </div>
+        <div class="modal-likes" id="modal-like-count">1,284 likes</div>
+        <div class="comment-input-row" style="border-top:1px solid var(--border);padding:10px 0 0">
+          <input type="text" placeholder="Add a comment…" id="modal-comment-input" onkeydown="postModalComment(event)"/>
+          <button class="post-btn">Post</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TOAST ══════════ -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ── STATE ───────────────────────────────────────────────
+const liked = {};
+const saved = {};
+
+// ── TABS ────────────────────────────────────────────────
+function showTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  const idx = {feed:0,explore:1,creator:2}[tab];
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── THEME ───────────────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const dark = html.dataset.theme === 'dark';
+  html.dataset.theme = dark ? 'light' : 'dark';
+  document.querySelector('.theme-toggle').textContent = dark ? '🌙' : '☀️';
+  showToast(dark ? '☀️ Light mode on' : '🌙 Dark mode on');
+}
+
+// ── LIKE ────────────────────────────────────────────────
+function toggleLike(id) {
+  const btn = document.getElementById('like-' + id);
+  const countEl = document.getElementById('like-count-' + id);
+  if (!btn) return;
+  liked[id] = !liked[id];
+  btn.classList.toggle('liked', liked[id]);
+  if (countEl) {
+    const n = parseInt(countEl.textContent.replace(/,/g,'')) + (liked[id] ? 1 : -1);
+    countEl.textContent = n.toLocaleString();
+    if (id === 'card1') document.querySelector('.likes-count').textContent = n.toLocaleString() + ' likes';
+  }
+  showToast(liked[id] ? '❤️ Added to liked photos' : '🤍 Removed from liked photos');
+}
+
+// ── DOUBLE TAP ──────────────────────────────────────────
+function doubleTapLike(cardId, wrapId) {
+  const burst = document.getElementById('burst' + wrapId.replace('wrap',''));
+  burst.classList.remove('animate');
+  void burst.offsetWidth;
+  burst.classList.add('animate');
+  if (!liked[cardId]) toggleLike(cardId);
+  setTimeout(() => burst.classList.remove('animate'), 900);
+}
+
+// ── SAVE ────────────────────────────────────────────────
+function toggleSave(id) {
+  const btn = document.getElementById('save-' + id);
+  if (!btn) return;
+  saved[id] = !saved[id];
+  btn.classList.toggle('saved', saved[id]);
+  const svg = btn.querySelector('svg');
+  svg.setAttribute('fill', saved[id] ? 'currentColor' : 'none');
+  showToast(saved[id] ? '🔖 Saved to your collection' : '📌 Removed from saved');
+}
+
+// ── RATING ──────────────────────────────────────────────
+function setRating(cardId, val) {
+  const stars = document.querySelectorAll('#rating-' + cardId + ' .star');
+  stars.forEach((s,i) => s.classList.toggle('filled', i < val));
+  showToast('⭐ Rated ' + val + ' star' + (val>1?'s':''));
+}
+
+// ── COMMENT ─────────────────────────────────────────────
+function postComment(e, cardId) {
+  if (e.key !== 'Enter') return;
+  const input = e.target;
+  if (!input.value.trim()) return;
+  showToast('💬 Comment posted!');
+  input.value = '';
+}
+function postModalComment(e) {
+  if (e.key !== 'Enter') return;
+  const input = document.getElementById('modal-comment-input');
+  if (!input.value.trim()) return;
+  const comments = document.querySelector('.modal-comments');
+  const div = document.createElement('div');
+  div.className = 'modal-comment';
+  div.innerHTML = `<img src="https://i.pravatar.cc/150?img=12" alt="you"/>
+    <div><span style="font-weight:700">jamie.rivera</span> ${input.value}</div>`;
+  comments.appendChild(div);
+  div.scrollIntoView({behavior:'smooth'});
+  input.value = '';
+  showToast('💬 Comment posted!');
+}
+
+// ── MODAL ───────────────────────────────────────────────
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeModalOutside(e) {
+  if (e.target.id === 'modal') closeModal();
+}
+
+// ── EXPLORE ─────────────────────────────────────────────
+function exploreSearch(val) {
+  if (val.length > 2) showToast('🔍 Searching for "' + val + '"…');
+}
+function setFilter(btn, name) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  showToast('🔎 Filter: ' + name);
+}
+
+// ── CREATOR ─────────────────────────────────────────────
+function selectFilter(el, name) {
+  document.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  showToast('🎨 Filter: ' + name);
+}
+function addPerson(e) {
+  if (e.key !== 'Enter') return;
+  addPersonBtn();
+}
+function addPersonBtn() {
+  const input = document.getElementById('people-input');
+  let val = input.value.trim().replace(/^@/,'');
+  if (!val) return;
+  const chip = document.createElement('div');
+  chip.className = 'tagged-chip';
+  chip.innerHTML = `<span>@${val}</span><button onclick="this.parentElement.remove(); showToast('👤 Tag removed')">×</button>`;
+  document.getElementById('tagged-people').appendChild(chip);
+  input.value = '';
+  showToast('👤 Tagged @' + val);
+}
+
+// ── TOAST ───────────────────────────────────────────────
+function showToast(msg) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 300); }, 2500);
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>

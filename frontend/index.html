@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lumora — Share. Discover. Connect.</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --grad:      linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+  --grad-h:    linear-gradient(90deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+  --accent:    #e1306c;
+  --blue:      #0095f6;
+  --green:     #22c55e;
+  --bg:        #ffffff;
+  --bg2:       #f8fafc;
+  --border:    #e5e7eb;
+  --text:      #111827;
+  --text-sub:  #6b7280;
+  --radius:    14px;
+  --trans:     .22s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="dark"] {
+  --bg:       #0a0a0f; --bg2: #111118; --border: #2a2a3a;
+  --text:     #f1f1f6; --text-sub: #8888a8;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); transition: background var(--trans), color var(--trans); overflow-x: hidden; }
+a    { text-decoration: none; color: inherit; }
+button { cursor: pointer; border: none; background: none; color: inherit; font-family: inherit; }
+.grad-text { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* NAVBAR */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 62px;
+  background: rgba(255,255,255,.88); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; z-index: 900;
+  transition: background var(--trans);
+}
+[data-theme="dark"] .navbar { background: rgba(10,10,15,.88); }
+.nav-logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -.5px; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.nav-links { display: flex; align-items: center; gap: 6px; }
+.nav-link { padding: 8px 14px; border-radius: 8px; font-size: .9rem; font-weight: 600; color: var(--text-sub); transition: all var(--trans); }
+.nav-link:hover { color: var(--text); background: var(--bg2); }
+.nav-cta { display: flex; align-items: center; gap: 10px; }
+.btn-ghost { padding: 9px 20px; border-radius: 9px; font-size: .9rem; font-weight: 700; border: 1.5px solid var(--border); transition: all var(--trans); }
+.btn-ghost:hover { border-color: var(--text-sub); background: var(--bg2); }
+.btn-grad { padding: 9px 22px; border-radius: 9px; font-size: .9rem; font-weight: 700; background: var(--grad); color: #fff; transition: opacity var(--trans); }
+.btn-grad:hover { opacity: .88; }
+.theme-btn { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--bg2); font-size: .95rem; transition: transform var(--trans); }
+.theme-btn:hover { transform: rotate(20deg); }
+
+/* HERO */
+.hero {
+  min-height: 100vh; display: flex; align-items: center;
+  padding: 80px 32px 60px; max-width: 1200px; margin: 0 auto;
+  gap: 60px;
+}
+.hero-left { flex: 1; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(225,48,108,.08); border: 1px solid rgba(225,48,108,.2);
+  color: var(--accent); padding: 6px 14px; border-radius: 20px;
+  font-size: .8rem; font-weight: 700; letter-spacing: .5px; margin-bottom: 22px;
+}
+.hero-title {
+  font-size: clamp(2.4rem,5vw,3.8rem); font-weight: 900; line-height: 1.1;
+  letter-spacing: -.03em; margin-bottom: 20px;
+}
+.hero-sub { font-size: 1.1rem; color: var(--text-sub); line-height: 1.65; max-width: 480px; margin-bottom: 32px; }
+.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
+.hero-btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px; border-radius: 12px; background: var(--grad);
+  color: #fff; font-weight: 800; font-size: 1rem;
+  transition: opacity var(--trans), transform var(--trans); border: none; cursor: pointer;
+}
+.hero-btn-primary:hover { opacity: .9; transform: translateY(-2px); }
+.hero-btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px; border-radius: 12px; border: 2px solid var(--border);
+  font-weight: 700; font-size: 1rem; transition: all var(--trans);
+}
+.hero-btn-secondary:hover { border-color: var(--text-sub); background: var(--bg2); transform: translateY(-2px); }
+.hero-social-proof { display: flex; align-items: center; gap: 14px; }
+.proof-avatars { display: flex; }
+.proof-avatar {
+  width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid var(--bg);
+  margin-right: -10px; background: var(--grad); overflow: hidden;
+}
+.proof-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.proof-text { font-size: .85rem; color: var(--text-sub); }
+.proof-text strong { color: var(--text); }
+
+/* HERO VISUAL */
+.hero-right { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 480px; }
+.hero-photo {
+  border-radius: var(--radius); overflow: hidden; position: relative;
+  box-shadow: 0 8px 30px rgba(0,0,0,.12);
+}
+.hero-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-photo:nth-child(1) { grid-row: span 2; }
+.hero-photo:nth-child(1) img { height: 100%; min-height: 300px; }
+.hero-photo:nth-child(2) img, .hero-photo:nth-child(3) img { height: 180px; }
+.hero-photo-overlay {
+  position: absolute; bottom: 10px; left: 10px; right: 10px;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
+  border-radius: 8px; padding: 8px 10px; color: #fff;
+  font-size: .75rem; display: flex; align-items: center; gap: 8px;
+}
+.photo-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); background: var(--grad); overflow: hidden; flex-shrink: 0; }
+.photo-dot img { width: 100%; height: 100%; object-fit: cover; }
+.photo-meta { flex: 1; min-width: 0; }
+.photo-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.photo-likes { opacity: .75; margin-top: 1px; }
+.live-badge {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0,0,0,.6); color: #fff; font-size: .65rem; font-weight: 800;
+  padding: 3px 8px; border-radius: 20px; backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,.15);
+}
+
+/* STATS */
+.stats-section {
+  background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 40px 32px;
+}
+.stats-inner { max-width: 900px; margin: 0 auto; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px; }
+.stat-item { text-align: center; }
+.stat-num { font-size: 2.2rem; font-weight: 900; line-height: 1; margin-bottom: 4px; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.stat-label { font-size: .88rem; color: var(--text-sub); font-weight: 600; }
+
+/* FEATURES */
+.features-section { padding: 80px 32px; max-width: 1100px; margin: 0 auto; }
+.section-eyebrow { text-align: center; font-size: .8rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.section-title { text-align: center; font-size: clamp(1.8rem,3.5vw,2.6rem); font-weight: 900; letter-spacing: -.02em; margin-bottom: 14px; }
+.section-sub { text-align: center; color: var(--text-sub); font-size: 1rem; max-width: 520px; margin: 0 auto 52px; line-height: 1.65; }
+.features-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 20px; }
+.feature-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 28px 24px; transition: all var(--trans);
+}
+.feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,.08); border-color: rgba(225,48,108,.2); }
+.feature-icon-wrap {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: var(--grad); display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; margin-bottom: 16px; box-shadow: 0 4px 14px rgba(225,48,108,.3);
+}
+.feature-title { font-size: 1rem; font-weight: 800; margin-bottom: 8px; }
+.feature-desc  { font-size: .88rem; color: var(--text-sub); line-height: 1.6; }
+
+/* HOW IT WORKS */
+.how-section { padding: 80px 32px; background: var(--bg2); }
+.how-inner { max-width: 900px; margin: 0 auto; }
+.how-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; position: relative; margin-top: 48px; }
+.how-steps::before {
+  content: ''; position: absolute; top: 28px; left: calc(16.67% + 16px); right: calc(16.67% + 16px);
+  height: 2px; background: var(--grad);
+}
+.how-step { text-align: center; padding: 0 24px; }
+.how-num {
+  width: 56px; height: 56px; border-radius: 50%; background: var(--grad);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 1.3rem; font-weight: 900; margin: 0 auto 18px;
+  position: relative; z-index: 1; box-shadow: 0 4px 16px rgba(225,48,108,.35);
+}
+.how-title { font-weight: 800; font-size: 1rem; margin-bottom: 8px; }
+.how-desc  { color: var(--text-sub); font-size: .88rem; line-height: 1.6; }
+
+/* AZURE SECTION */
+.azure-section { padding: 80px 32px; max-width: 1100px; margin: 0 auto; }
+.azure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.azure-text h2 { font-size: clamp(1.6rem,3vw,2.2rem); font-weight: 900; margin-bottom: 14px; letter-spacing: -.02em; }
+.azure-text p  { color: var(--text-sub); font-size: .95rem; line-height: 1.7; margin-bottom: 24px; }
+.azure-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.azure-badge {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 14px; font-size: .82rem; font-weight: 700;
+}
+.azure-visual {
+  background: linear-gradient(135deg,rgba(0,149,246,.08),rgba(225,48,108,.08));
+  border: 1px solid var(--border); border-radius: 18px; padding: 32px;
+}
+.azure-arch { display: flex; flex-direction: column; gap: 10px; }
+.arch-row { display: flex; align-items: center; gap: 10px; }
+.arch-box {
+  flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; font-size: .8rem; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.arch-arrow { color: var(--text-sub); font-size: .9rem; }
+
+/* CTA */
+.cta-section {
+  padding: 80px 32px; background: var(--grad);
+  text-align: center; position: relative; overflow: hidden;
+}
+.cta-section::before {
+  content: ''; position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/svg%3E");
+}
+.cta-inner { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; }
+.cta-title { font-size: clamp(1.8rem,4vw,2.8rem); font-weight: 900; color: #fff; letter-spacing: -.02em; margin-bottom: 14px; }
+.cta-sub   { color: rgba(255,255,255,.82); font-size: 1rem; line-height: 1.6; margin-bottom: 32px; }
+.cta-btns  { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.cta-btn-white { padding: 14px 28px; border-radius: 12px; background: #fff; color: var(--accent); font-weight: 800; font-size: 1rem; transition: all var(--trans); }
+.cta-btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+.cta-btn-outline { padding: 14px 28px; border-radius: 12px; border: 2px solid rgba(255,255,255,.5); color: #fff; font-weight: 700; font-size: 1rem; transition: all var(--trans); }
+.cta-btn-outline:hover { border-color: #fff; background: rgba(255,255,255,.1); }
+
+/* FOOTER */
+footer { background: var(--bg2); border-top: 1px solid var(--border); padding: 40px 32px 24px; }
+.footer-inner { max-width: 1100px; margin: 0 auto; }
+.footer-top { display: grid; grid-template-columns: 1.5fr repeat(3,1fr); gap: 32px; margin-bottom: 32px; }
+.footer-logo { font-size: 1.3rem; font-weight: 800; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+.footer-tagline { font-size: .85rem; color: var(--text-sub); line-height: 1.6; max-width: 220px; }
+.footer-col h4 { font-size: .82rem; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--text-sub); margin-bottom: 12px; }
+.footer-col a  { display: block; font-size: .85rem; color: var(--text-sub); margin-bottom: 8px; transition: color var(--trans); }
+.footer-col a:hover { color: var(--text); }
+.footer-bottom { border-top: 1px solid var(--border); padding-top: 20px; display: flex; align-items: center; justify-content: space-between; font-size: .8rem; color: var(--text-sub); flex-wrap: wrap; gap: 10px; }
+.footer-azure { display: flex; align-items: center; gap: 6px; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .hero { flex-direction: column; padding: 80px 20px 40px; }
+  .hero-right { grid-template-columns: 1fr 1fr; max-width: 100%; }
+  .how-steps::before { display: none; }
+  .how-steps { grid-template-columns: 1fr; gap: 28px; }
+  .azure-grid { grid-template-columns: 1fr; }
+  .footer-top { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .navbar { padding: 0 16px; }
+  .nav-links { display: none; }
+  .hero { padding-top: 70px; }
+  .stats-inner { gap: 28px; }
+  .footer-top { grid-template-columns: 1fr; }
+  .hero-right { grid-template-columns: 1fr; }
+  .hero-photo:nth-child(2), .hero-photo:nth-child(3) { display: none; }
+}
+</style>
+</head>
+<body>
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-logo" href="index.html">Lumora</a>
+  <div class="nav-links">
+    <a class="nav-link" href="#features">Features</a>
+    <a class="nav-link" href="#how">How it works</a>
+    <a class="nav-link" href="#azure">Technology</a>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙</button>
+    <a class="btn-ghost" href="auth.html">Sign In</a>
+    <a class="btn-grad" href="auth.html#signup">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">
+      <span>✦</span> Cloud-Native · Azure-Powered
+    </div>
+    <h1 class="hero-title">
+      Share the moments<br/>that <span class="grad-text">matter most</span>
+    </h1>
+    <p class="hero-sub">
+      A scalable photo-sharing platform for creators and communities.
+      Upload, discover and engage with stunning photography — powered by Microsoft Azure.
+    </p>
+    <div class="hero-btns">
+      <a class="hero-btn-primary" href="auth.html#signup">
+        Start Sharing Free
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <a class="hero-btn-secondary" href="auth.html">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Browse Photos
+      </a>
+    </div>
+    <div class="hero-social-proof">
+      <div class="proof-avatars">
+        <div class="proof-avatar"></div>
+        <div class="proof-avatar"></div>
+        <div class="proof-avatar"></div>
+        <div class="proof-avatar"></div>
+      </div>
+      <div class="proof-text"><strong>Join thousands</strong> of creators already sharing</div>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-photo">
+      <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500&q=80" alt="mountain landscape"/>
+      <div class="hero-photo-overlay">
+        <div class="photo-dot"></div>
+        <div class="photo-meta">
+          <div class="photo-name">Mountain Landscape</div>
+          <div class="photo-likes">❤️ 2.4k likes</div>
+        </div>
+      </div>
+      <div class="live-badge">📍 Featured</div>
+    </div>
+    <div class="hero-photo">
+      <img src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80" alt="cityscape"/>
+      <div class="hero-photo-overlay">
+        <div class="photo-dot"></div>
+        <div class="photo-meta">
+          <div class="photo-name">City at Night</div>
+          <div class="photo-likes">❤️ 1.8k likes</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-photo">
+      <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=80" alt="nature"/>
+      <div class="hero-photo-overlay">
+        <div class="photo-dot"></div>
+        <div class="photo-meta">
+          <div class="photo-name">Wild Patagonia</div>
+          <div class="photo-likes">❤️ 976 likes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats-section">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="stat-num" id="stat-photos">0</div><div class="stat-label">Photos Shared</div></div>
+    <div class="stat-item"><div class="stat-num" id="stat-creators">0</div><div class="stat-label">Active Creators</div></div>
+    <div class="stat-item"><div class="stat-num" id="stat-likes">0</div><div class="stat-label">Total Likes</div></div>
+    <div class="stat-item"><div class="stat-num" id="stat-uptime">99.9%</div><div class="stat-label">Azure Uptime</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features">
+  <div class="section-eyebrow">Everything you need</div>
+  <h2 class="section-title">Built for creators, loved by communities</h2>
+  <p class="section-sub">Every feature designed to help you share your best work and connect with the people who love it.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon-wrap">📸</div>
+      <div class="feature-title">Smart Upload</div>
+      <div class="feature-desc">Drag-and-drop photo upload directly to Azure Blob Storage with 8 built-in CSS filters and rich metadata tagging.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap">👥</div>
+      <div class="feature-title">People Tagging</div>
+      <div class="feature-desc">Tag people who appear in your photos with interactive pin labels. Azure Computer Vision assists with auto-detection.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap">❤️</div>
+      <div class="feature-title">Rich Reactions</div>
+      <div class="feature-desc">Double-tap to like with a burst animation, star ratings, comments and bookmark to save photos for later.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap">🔍</div>
+      <div class="feature-title">Smart Discovery</div>
+      <div class="feature-desc">Explore by hashtag, location, creator or keyword. Trending content curated by engagement metrics.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap">🔒</div>
+      <div class="feature-title">Role-Based Access</div>
+      <div class="feature-desc">Separate creator and consumer roles via Azure AD B2C. Creators upload, consumers discover and engage.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap">⚡</div>
+      <div class="feature-title">Edge Performance</div>
+      <div class="feature-desc">Azure Front Door CDN delivers photos from the nearest edge node globally. Sub-100ms load times.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap">📊</div>
+      <div class="feature-title">Creator Analytics</div>
+      <div class="feature-desc">Track total likes, comments, average ratings and your top-performing photos from your Creator Studio.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap">🌙</div>
+      <div class="feature-title">Dark Mode</div>
+      <div class="feature-desc">Full dark and light theme support across every page, persisted to your browser preference automatically.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="how-inner">
+    <div class="section-eyebrow">Simple as 1-2-3</div>
+    <h2 class="section-title">How Lumora works</h2>
+    <p class="section-sub">Get started in minutes. No credit card required.</p>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <div class="how-title">Create your account</div>
+        <div class="how-desc">Sign up as a consumer to browse and engage, or ask an admin to grant you creator access.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <div class="how-title">Upload or Discover</div>
+        <div class="how-desc">Creators upload photos with metadata, filters and person tags. Consumers browse the feed and explore.</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <div class="how-title">Like, Save &amp; Comment</div>
+        <div class="how-desc">Engage with photos you love — rate them, leave comments, save to your collection and share links.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AZURE SECTION -->
+<section class="azure-section" id="azure">
+  <div class="azure-grid">
+    <div class="azure-text">
+      <div class="section-eyebrow" style="text-align:left">Powered by Microsoft Azure</div>
+      <h2>Enterprise-grade scalability built in from day one</h2>
+      <p>Every component of Lumora is cloud-native. From serverless Azure Functions to globally-distributed Cosmos DB and Front Door CDN — it scales automatically with demand.</p>
+      <div class="azure-badges">
+        <div class="azure-badge">☁️ Azure Blob Storage</div>
+        <div class="azure-badge">⚡ Azure Functions</div>
+        <div class="azure-badge">🌍 Azure Front Door</div>
+        <div class="azure-badge">🗄️ Azure Cosmos DB</div>
+        <div class="azure-badge">🔒 Azure AD B2C</div>
+        <div class="azure-badge">👁️ Computer Vision</div>
+      </div>
+    </div>
+    <div class="azure-visual">
+      <div class="azure-arch">
+        <div class="arch-row">
+          <div class="arch-box" style="justify-content:center;background:linear-gradient(135deg,rgba(0,149,246,.08),rgba(225,48,108,.08))">
+            🌍 Azure Front Door CDN
+          </div>
+        </div>
+        <div style="text-align:center;color:var(--text-sub);font-size:1.2rem">↓</div>
+        <div class="arch-row">
+          <div class="arch-box">📄 Static Site<br/><span style="font-size:.72rem;color:var(--text-sub)">Blob Storage</span></div>
+          <div class="arch-arrow">↔</div>
+          <div class="arch-box">⚡ REST API<br/><span style="font-size:.72rem;color:var(--text-sub)">API Management</span></div>
+        </div>
+        <div style="text-align:center;color:var(--text-sub);font-size:1.2rem">↓</div>
+        <div class="arch-row">
+          <div class="arch-box">🔧 Functions<br/><span style="font-size:.72rem;color:var(--text-sub)">Serverless Logic</span></div>
+          <div class="arch-arrow">↔</div>
+          <div class="arch-box">🔒 AD B2C<br/><span style="font-size:.72rem;color:var(--text-sub)">Auth &amp; Roles</span></div>
+        </div>
+        <div style="text-align:center;color:var(--text-sub);font-size:1.2rem">↓</div>
+        <div class="arch-row">
+          <div class="arch-box">🗄️ Cosmos DB<br/><span style="font-size:.72rem;color:var(--text-sub)">Metadata</span></div>
+          <div class="arch-arrow">↔</div>
+          <div class="arch-box">🖼️ Blob Storage<br/><span style="font-size:.72rem;color:var(--text-sub)">Photos</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <h2 class="cta-title">Ready to share your world?</h2>
+    <p class="cta-sub">Join Lumora today. It's free for consumers and always will be.</p>
+    <div class="cta-btns">
+      <a class="cta-btn-white" href="auth.html#signup">Create Free Account</a>
+      <a class="cta-btn-outline" href="auth.html">Sign In</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo">Lumora</div>
+        <div class="footer-tagline">A scalable cloud-native photo sharing platform built on Microsoft Azure.</div>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="auth.html">Sign Up</a>
+        <a href="auth.html">Sign In</a>
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="#azure">Azure Architecture</a>
+        <a href="#">API Docs</a>
+        <a href="#">Status Page</a>
+        <a href="#">Security</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="#">Terms of Service</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Cookie Policy</a>
+        <a href="#">GDPR</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 Lumora. All rights reserved.</span>
+      <div class="footer-azure">
+        <span>Powered by</span>
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#0078d4" d="M13.05 4.24L6.57 18.41l-1.5.01 5.08-10.28-3.12-2.73L13.05 4.24zM13.35 5.46L9.99 19.75l4.19-1.01 3.89-10.22-4.72-3.06z"/></svg>
+        <span>Microsoft Azure</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Theme
+function initTheme() {
+  const t = localStorage.getItem('lm_theme') || 'light';
+  document.documentElement.dataset.theme = t;
+  document.getElementById('theme-btn').textContent = t === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const h = document.documentElement;
+  const n = h.dataset.theme === 'dark' ? 'light' : 'dark';
+  h.dataset.theme = n;
+  localStorage.setItem('lm_theme', n);
+  document.getElementById('theme-btn').textContent = n === 'dark' ? '☀️' : '🌙';
+}
+initTheme();
+
+// Animated counters
+function animateCounter(id, target, suffix = '') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let current = 0;
+  const step = Math.ceil(target / 60);
+  const t = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current.toLocaleString() + suffix;
+    if (current >= target) clearInterval(t);
+  }, 25);
+}
+
+// IntersectionObserver to trigger counters when stats section is visible
+const statsSection = document.querySelector('.stats-section');
+const observer = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) {
+    animateCounter('stat-photos',   12480);
+    animateCounter('stat-creators',  847);
+    animateCounter('stat-likes',   58300);
+    observer.disconnect();
+  }
+}, { threshold: 0.4 });
+if (statsSection) observer.observe(statsSection);
+</script>
+</body>
+</html>
