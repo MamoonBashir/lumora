@@ -16,18 +16,15 @@ app.http('photosById', {
     if (request.method === 'GET') {
       const { resource: photo } = await containers.photos().item(id, id).read();
       if (!photo) throw Object.assign(new Error('Photo not found'), { status: 404 });
-      // Attach caller's like/save/rating state if logged in
+      // Attach caller's like/save/rating state only if authenticated
+      // (omit entirely if not logged in so frontend keeps localStorage fallback)
       try {
         const claims = requireAuth(request);
         const { resource: user } = await containers.users().item(claims.id, claims.id).read();
-        photo.userLiked  = (user?.likedPhotos  || []).includes(id);
-        photo.userSaved  = (user?.savedPhotos   || []).includes(id);
-        photo.userRating = (photo.ratings       || {})[claims.id] || 0;
-      } catch (_) {
-        photo.userLiked  = false;
-        photo.userSaved  = false;
-        photo.userRating = 0;
-      }
+        photo.userLiked  = (user?.likedPhotos || []).includes(id);
+        photo.userSaved  = (user?.savedPhotos  || []).includes(id);
+        photo.userRating = (photo.ratings      || {})[claims.id] || 0;
+      } catch (_) { /* not logged in — leave userLiked/userSaved/userRating absent */ }
       return ok(photo);
     }
 
