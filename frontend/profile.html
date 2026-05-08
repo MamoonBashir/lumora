@@ -242,7 +242,7 @@
       <div class="edit-avatar-row">
         <div class="edit-avatar-preview"><img id="edit-avatar-preview" src="" alt=""/></div>
         <div>
-          <button class="edit-avatar-btn" onclick="showToast('Photo upload connects to Azure Blob Storage','info')">Change Photo</button>
+          <button class="edit-avatar-btn" onclick="showToast('Avatar upload coming soon!','info')">Change Photo</button>
           <div style="font-size:.76rem;color:var(--text-sub);margin-top:4px">JPG, PNG · Max 5MB</div>
         </div>
       </div>
@@ -451,9 +451,9 @@ async function saveProfile() {
     showToast('✅ Profile updated!', 'success');
     document.getElementById('profile-name').textContent = payload.displayName || payload.username;
     document.getElementById('profile-bio').textContent  = payload.bio;
-  } catch {
-    closeEditModal();
-    showToast('Profile saved (connect backend to persist).', 'info');
+  } catch(e) {
+    console.error('saveProfile error:', e);
+    showToast('⚠️ Failed to save profile. Please try again.', 'error');
   }
 }
 
