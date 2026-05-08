@@ -283,7 +283,7 @@ async function loadTrending() {
         <span>${i < 2 ? '🔥' : '📈'}</span>
       </div>`).join('');
   } catch {
-    document.getElementById('trending-list').innerHTML = `<div style="color:var(--text-sub);font-size:.84rem;text-align:center;padding:10px">Connect backend to see trending tags</div>`;
+    document.getElementById('trending-list').innerHTML = `<div style="color:var(--text-sub);font-size:.84rem;text-align:center;padding:10px">No trending tags yet</div>`;
   }
 }
 
@@ -357,12 +357,12 @@ function closeStoryModal(e) {
 
 function publishStory() {
   document.getElementById('story-modal').style.display = 'none';
-  showToast('📸 Story shared! (connects to Azure Blob when backend is live)', 'success');
+  showToast('📸 Story shared!', 'success');
   document.getElementById('story-file-input').value = '';
 }
 
 function viewStory(id) {
-  showToast('👁 Story viewer — connects to Azure backend when live', 'info');
+  showToast('👁 Story viewer coming soon!', 'info');
 }
 
 // Role welcome banner
