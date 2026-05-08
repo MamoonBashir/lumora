@@ -1,7 +1,7 @@
 /* Lumora — API & Azure Configuration
    Replace these values after deploying Azure backend */
 const CONFIG = {
-  API_BASE:       'http://localhost:7071/api',
+  API_BASE:       'https://lumora-api-mb.azurewebsites.net/api',
   BLOB_BASE:      'https://lumorastorage01.blob.core.windows.net/photos',
   CDN_BASE:       'https://lumora.azureedge.net',
   AD_B2C_TENANT:  'lumora.onmicrosoft.com',
