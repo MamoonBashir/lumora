@@ -342,7 +342,26 @@ if (!photoId) {
 
 async function loadPhoto(id) {
   try {
-    const photo = await API.getPhoto(id);
+    // Fetch photo + current user state in parallel
+    const [photoResult, meResult] = await Promise.allSettled([
+      API.getPhoto(id),
+      API.me()
+    ]);
+
+    if (photoResult.status === 'rejected') throw photoResult.reason;
+    const photo = photoResult.value;
+
+    // Apply user's like/save/rating state from their profile (most reliable source)
+    if (meResult.status === 'fulfilled' && meResult.value) {
+      const me = meResult.value;
+      photo.userLiked  = (me.likedPhotos || []).includes(id);
+      photo.userSaved  = (me.savedPhotos  || []).includes(id);
+      // userRating: check photo.ratings map using user id
+      if (!photo.userRating && photo.ratings && me.id) {
+        photo.userRating = photo.ratings[me.id] || 0;
+      }
+    }
+
     renderPhoto(photo);
     loadComments(id);
   } catch(e) {
@@ -415,7 +434,8 @@ function renderPhoto(photo) {
   document.getElementById('info-caption').innerHTML   = parseHashtags(escapeHTML(photo.caption || photo.description || ''));
   document.getElementById('meta-location').textContent = photo.location || '—';
   document.getElementById('meta-date').textContent    = timeAgo(photo.createdAt || new Date());
-  document.getElementById('meta-likes').textContent   = formatNum(photo.likeCount || photo.likes || 0);
+  const likeCount = photo.likeCount ?? photo.likes ?? 0;
+  document.getElementById('meta-likes').textContent    = formatNum(likeCount) + ' like' + (likeCount !== 1 ? 's' : '');
   document.getElementById('meta-comments').textContent = formatNum(photo.commentCount || 0);
 
   // Like / save state — server truth (logged-in) wins, else fall back to localStorage
@@ -426,7 +446,7 @@ function renderPhoto(photo) {
   // Only sync localStorage when we got a definitive answer from the server
   if (photo.userLiked === true || photo.userLiked === false) LikeState.set(photo.id, photo.userLiked);
   if (photo.userSaved === true || photo.userSaved === false) SaveState.set(photo.id, photo.userSaved);
-  document.getElementById('like-count-main').textContent = formatNum(photo.likeCount || photo.likes || 0);
+  document.getElementById('like-count-main').textContent = formatNum(likeCount);
   document.getElementById('comment-count-main').textContent = formatNum(photo.commentCount || 0);
   if (liked) {
     const lb = document.getElementById('like-btn-main');
