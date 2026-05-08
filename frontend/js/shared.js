@@ -232,7 +232,12 @@ function buildPhotoCard(photo) {
       <div class="card-img-wrap" id="wrap-${photo.id}"
            ondblclick="doubleTap('${photo.id}')"
            onclick="openPhotoModal('${photo.id}')">
-        <img src="${photo.imageUrl || photo.thumbnailUrl || photo.blobUrl}" alt="${escapeHTML(photo.title||'')}"/>
+        ${photo.mediaType === 'video'
+          ? `<video src="${photo.blobUrl}" style="width:100%;display:block;max-height:600px;object-fit:cover;background:#000"
+               muted autoplay loop playsinline></video>
+             <div style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);color:#fff;padding:3px 8px;border-radius:12px;font-size:.72rem;font-weight:700;pointer-events:none">🎬 VIDEO</div>`
+          : `<img src="${photo.imageUrl || photo.thumbnailUrl || photo.blobUrl}" alt="${escapeHTML(photo.title||'')}"/>`
+        }
         <div class="heart-overlay"><span class="heart-burst" id="hb-${photo.id}">❤️</span></div>
         <div class="person-tag-layer">${personTags}</div>
       </div>

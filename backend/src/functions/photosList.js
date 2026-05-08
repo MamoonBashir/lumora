@@ -41,11 +41,16 @@ app.http('photos', {
     /* ── POST /api/photos ── */
     if (request.method === 'POST') {
       const claims = requireCreator(request);
-      const { title, description, blobUrl, category, hashtags } = await request.json();
+      const { title, description, blobUrl, category, hashtags, mediaType } = await request.json();
       if (!blobUrl) return err('blobUrl is required');
 
       const validCategories = ['travel', 'nature', 'urban', 'portrait', 'abstract'];
       const cat = validCategories.includes(category) ? category : 'abstract';
+
+      // Detect media type from extension if not provided
+      const videoExts = ['mp4', 'mov', 'webm'];
+      const ext = blobUrl.split('.').pop().toLowerCase();
+      const resolvedMediaType = mediaType || (videoExts.includes(ext) ? 'video' : 'image');
 
       const photo = {
         id:           uuid(),
@@ -54,6 +59,7 @@ app.http('photos', {
         title:        title       || '',
         description:  description || '',
         blobUrl,
+        mediaType:    resolvedMediaType,
         category:     cat,
         hashtags:     Array.isArray(hashtags) ? hashtags.map(h => h.replace(/^#/, '').toLowerCase()) : [],
         likeCount:    0,

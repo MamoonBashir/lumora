@@ -360,10 +360,35 @@ function renderPhoto(photo) {
   document.title = `Lumora — ${photo.title || 'Photo'}`;
   document.getElementById('bc-title').textContent = photo.title || 'Photo';
 
-  // Image
-  const img = document.getElementById('photo-img');
-  img.src = photo.imageUrl || photo.thumbnailUrl || photo.blobUrl || '';
-  img.alt = photo.title || '';
+  // Image or Video
+  const mediaUrl = photo.imageUrl || photo.thumbnailUrl || photo.blobUrl || '';
+  const isVideo  = photo.mediaType === 'video' || /\.(mp4|mov|webm)$/i.test(mediaUrl);
+  const wrap     = document.getElementById('photo-wrap');
+  const img      = document.getElementById('photo-img');
+
+  if (isVideo) {
+    // Replace the img with a video element
+    img.style.display = 'none';
+    let vid = document.getElementById('photo-vid');
+    if (!vid) {
+      vid = document.createElement('video');
+      vid.id       = 'photo-vid';
+      vid.controls = true;
+      vid.autoplay = true;
+      vid.loop     = true;
+      vid.style.cssText = 'width:100%;display:block;max-height:75vh;object-fit:contain;background:#000';
+      wrap.insertBefore(vid, img);
+    }
+    vid.src = mediaUrl;
+    // Add video badge
+    document.getElementById('filter-badge').textContent = '🎬 VIDEO';
+    document.getElementById('filter-badge').style.display = 'block';
+  } else {
+    img.src = mediaUrl;
+    img.alt = photo.title || '';
+    const vid = document.getElementById('photo-vid');
+    if (vid) vid.style.display = 'none';
+  }
 
   // Filter badge
   if (photo.filter && photo.filter !== 'Original') {

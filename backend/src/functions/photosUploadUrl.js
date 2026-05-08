@@ -14,17 +14,20 @@ app.http('photosUploadUrl', {
 
     const body      = await request.json();
     const ext       = (body.extension || 'jpg').replace(/^\./, '').toLowerCase();
-    const allowed   = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    if (!allowed.includes(ext)) return err('Unsupported file type');
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const videoExts = ['mp4', 'mov', 'webm'];
+    const allowed   = [...imageExts, ...videoExts];
+    if (!allowed.includes(ext)) return err('Unsupported file type. Allowed: jpg, png, webp, gif, mp4, mov, webm');
 
-    const blobName = `${uuid()}.${ext}`;
-    const sasUrl   = await generateUploadSasUrl(blobName);
+    const mediaType = videoExts.includes(ext) ? 'video' : 'image';
+    const blobName  = `${uuid()}.${ext}`;
+    const sasUrl    = await generateUploadSasUrl(blobName);
 
     // The public read URL (without SAS) is returned so the client can save it
     const account   = process.env.BLOB_ACCOUNT_NAME;
     const container = process.env.BLOB_CONTAINER || 'photos';
     const publicUrl = `https://${account}.blob.core.windows.net/${container}/${blobName}`;
 
-    return ok({ sasUrl, publicUrl, blobName });
+    return ok({ sasUrl, publicUrl, blobName, mediaType });
   }),
 });
