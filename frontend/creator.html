@@ -637,7 +637,7 @@ async function publishPhoto() {
       description: caption,
       blobUrl:     publicUrl,
       mediaType:   mediaType || (isVideo ? 'video' : 'image'),
-      category:    isVideo ? (selectedCategory || 'abstract') : (selectedFilter || 'abstract'),
+      category:    selectedFilter && selectedFilter !== 'Original' ? selectedFilter.toLowerCase() : 'abstract',
       hashtags:    hashtagMatches,
     });
 
