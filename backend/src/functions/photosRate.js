@@ -18,16 +18,20 @@ app.http('photosRate', {
     const { resource: photo } = await containers.photos().item(photoId, photoId).read();
     if (!photo) throw Object.assign(new Error('Photo not found'), { status: 404 });
 
-    const oldCount = photo.ratingCount || 0;
-    const oldAvg   = photo.avgRating   || 0;
-    const newCount = oldCount + 1;
-    const newAvg   = parseFloat(((oldAvg * oldCount + rating) / newCount).toFixed(2));
+    // Per-user rating map — prevents duplicate counts
+    const ratings  = photo.ratings || {};         // { userId: score }
+    ratings[claims.id] = rating;                  // overwrite if already rated
+
+    const values   = Object.values(ratings);
+    const newCount = values.length;
+    const newAvg   = parseFloat((values.reduce((a, b) => a + b, 0) / newCount).toFixed(2));
 
     await containers.photos().item(photoId, photoId).patch([
+      { op: 'set', path: '/ratings',     value: ratings  },
       { op: 'set', path: '/avgRating',   value: newAvg   },
       { op: 'set', path: '/ratingCount', value: newCount },
     ]);
 
-    return ok({ avgRating: newAvg, ratingCount: newCount });
+    return ok({ avgRating: newAvg, ratingCount: newCount, userRating: rating });
   }),
 });

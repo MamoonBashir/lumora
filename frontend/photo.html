@@ -126,9 +126,11 @@
 .your-rating-row { border-top:1px solid var(--border); padding-top:12px; }
 .your-rating-label { font-size:.82rem; color:var(--text-sub); margin-bottom:8px; }
 .your-stars { display:flex; gap:5px; }
-.your-star { font-size:1.6rem; cursor:pointer; transition:transform var(--trans); filter:grayscale(1); }
-.your-star.on { filter:none; }
-.your-star:hover { transform:scale(1.25); filter:none; }
+.your-star { font-size:1.6rem; cursor:pointer; transition:transform var(--trans), color var(--trans); color: var(--border); }
+.your-star.on { color: #f59e0b; }
+.your-stars:hover .your-star { color: #f59e0b; }
+.your-stars:hover .your-star ~ .your-star { color: var(--border); }
+.your-star:hover { transform:scale(1.25); }
 
 /* Comments card */
 .comments-card { padding:16px; }
@@ -461,6 +463,8 @@ function renderPhoto(photo) {
     `<span class="star${n <= Math.round(avg) ? ' on' : ''}">★</span>`).join('');
   document.getElementById('rating-count').textContent = cnt > 0 ? `${cnt} ratings` : 'No ratings yet';
   renderRatingBars(photo.ratingBreakdown || {});
+  // Pre-fill user's existing rating
+  if (photo.userRating) setYourStars(photo.userRating);
 
   showState('loaded');
 }
@@ -547,9 +551,12 @@ async function submitComment() {
 }
 
 // ── RATING ────────────────────────────────────────
+function setYourStars(score) {
+  document.querySelectorAll('.your-star').forEach((s, i) => s.classList.toggle('on', i < score));
+}
+
 async function submitRating(score) {
-  document.querySelectorAll('.your-star').forEach((s,i) => s.classList.toggle('on', i < score));
-  showToast(`⭐ Rated ${score} star${score>1?'s':''}!`, 'success');
+  setYourStars(score);                             // immediate visual feedback
   try {
     const res = await API.ratePhoto(currentPhotoId, score);
     if (res && res.avgRating !== undefined) {
@@ -557,9 +564,12 @@ async function submitRating(score) {
       document.getElementById('rating-count').textContent = `${res.ratingCount} rating${res.ratingCount !== 1 ? 's' : ''}`;
       document.getElementById('avg-stars').innerHTML = [1,2,3,4,5].map(n =>
         `<span class="star${n <= Math.round(res.avgRating) ? ' on' : ''}">★</span>`).join('');
+      setYourStars(res.userRating || score);        // confirm with server value
     }
+    showToast(`⭐ Rated ${score} star${score > 1 ? 's' : ''}!`, 'success');
   } catch(e) {
     console.error('submitRating error:', e);
+    setYourStars(0);                               // rollback on failure
     showToast('⚠️ Rating failed. Please try again.', 'error');
   }
 }
