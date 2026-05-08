@@ -705,10 +705,13 @@ function renderManageList(photos) {
   }
   list.innerHTML = photos.map(p => `
     <div class="manage-list-item">
-      <img class="manage-thumb" src="${p.thumbnailUrl||p.imageUrl}" alt="${escapeHTML(p.title||'')}"/>
+      ${p.mediaType === 'video'
+        ? `<div class="manage-thumb" style="background:#111;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">🎬</div>`
+        : `<img class="manage-thumb" src="${p.thumbnailUrl||p.imageUrl||p.blobUrl}" alt="${escapeHTML(p.title||'')}"/>`
+      }
       <div class="manage-info">
-        <div class="manage-title">${escapeHTML(p.title||'Untitled')}</div>
-        <div class="manage-stats">❤️ ${formatNum(p.likes||0)} · 💬 ${formatNum(p.commentCount||0)} · ⭐ ${(p.avgRating||0).toFixed(1)} · ${timeAgo(p.createdAt||new Date())}</div>
+        <div class="manage-title">${escapeHTML(p.title||'Untitled')} ${p.mediaType==='video'?'<span style="font-size:.7rem;background:#222;color:#fff;padding:1px 6px;border-radius:8px;margin-left:4px">VIDEO</span>':''}</div>
+        <div class="manage-stats">❤️ ${formatNum(p.likeCount||p.likes||0)} · 💬 ${formatNum(p.commentCount||0)} · ⭐ ${(p.avgRating||0).toFixed(1)} · ${timeAgo(p.createdAt||new Date())}</div>
       </div>
       <div class="manage-actions">
         <a href="photo.html?id=${p.id}" class="icon-btn" title="View">
