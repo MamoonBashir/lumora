@@ -418,9 +418,12 @@ function renderPhoto(photo) {
   document.getElementById('meta-likes').textContent   = formatNum(photo.likeCount || photo.likes || 0);
   document.getElementById('meta-comments').textContent = formatNum(photo.commentCount || 0);
 
-  // Like / save state
-  const liked = LikeState.isLiked(photo.id);
-  const saved = SaveState.isSaved(photo.id);
+  // Like / save state — use server truth, sync to localStorage
+  const liked = photo.userLiked !== undefined ? photo.userLiked : LikeState.isLiked(photo.id);
+  const saved = photo.userSaved !== undefined ? photo.userSaved : SaveState.isSaved(photo.id);
+  // Keep localStorage in sync with server
+  if (photo.userLiked !== undefined) LikeState.set(photo.id, photo.userLiked);
+  if (photo.userSaved !== undefined) SaveState.set(photo.id, photo.userSaved);
   document.getElementById('like-count-main').textContent = formatNum(photo.likeCount || photo.likes || 0);
   document.getElementById('comment-count-main').textContent = formatNum(photo.commentCount || 0);
   if (liked) {

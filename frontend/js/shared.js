@@ -185,12 +185,14 @@ const LikeState = {
   _data: JSON.parse(localStorage.getItem('lm_likes') || '{}'),
   toggle(id) { this._data[id] = !this._data[id]; this._save(); return this._data[id]; },
   isLiked(id) { return !!this._data[id]; },
+  set(id, val) { this._data[id] = !!val; this._save(); },
   _save() { localStorage.setItem('lm_likes', JSON.stringify(this._data)); },
 };
 const SaveState = {
   _data: JSON.parse(localStorage.getItem('lm_saves') || '{}'),
   toggle(id) { this._data[id] = !this._data[id]; this._save(); return this._data[id]; },
   isSaved(id) { return !!this._data[id]; },
+  set(id, val) { this._data[id] = !!val; this._save(); },
   remove(id)  { delete this._data[id]; this._save(); },
   _save() { localStorage.setItem('lm_saves', JSON.stringify(this._data)); },
 };
