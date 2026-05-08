@@ -490,17 +490,11 @@ input, select { font-family: inherit; }
               <div class="role-card-name">Consumer</div>
               <div class="role-card-desc">Browse &amp; discover photos</div>
             </div>
-            <div class="role-card" id="role-creator" onclick="selectRole('creator')" style="position:relative">
+            <div class="role-card" id="role-creator" onclick="selectRole('creator')">
               <div class="role-card-icon">📸</div>
               <div class="role-card-name">Creator</div>
               <div class="role-card-desc">Upload &amp; manage photos</div>
-              <div style="position:absolute;top:6px;right:8px;font-size:.65rem;background:var(--accent);color:#fff;padding:2px 6px;border-radius:8px;font-weight:700">INVITE ONLY</div>
             </div>
-          </div>
-          <!-- Creator notice — shown when Creator card is clicked -->
-          <div id="creator-notice" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(225,48,108,.07);border:1px solid rgba(225,48,108,.25);border-radius:8px;font-size:.82rem;color:var(--text-sub);line-height:1.5">
-            🔒 <strong>Creator accounts are invite-only.</strong><br/>
-            Your account will be created as <strong>Consumer</strong>. To request Creator access, contact the admin after registering.
           </div>
         </div>
 
@@ -1203,11 +1197,9 @@ function doForgot() {
 // ── ROLE SELECTION ──────────────────────────────────────────
 let selectedRole = 'consumer';
 function selectRole(role) {
-  selectedRole = 'consumer'; // Always register as consumer regardless of selection
+  selectedRole = role;
   document.getElementById('role-consumer').classList.toggle('active', role === 'consumer');
   document.getElementById('role-creator').classList.toggle('active', role === 'creator');
-  const notice = document.getElementById('creator-notice');
-  if (notice) notice.style.display = role === 'creator' ? 'block' : 'none';
 }
 
 // ── MOCK AUTH (frontend preview — replaced by real Azure AD B2C tokens) ──

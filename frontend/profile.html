@@ -373,14 +373,22 @@ function renderGrid(gridId, photos, emptyId) {
   const grid  = document.getElementById(gridId);
   const empty = document.getElementById(emptyId);
   if (!photos.length) { if(empty) empty.style.display = 'block'; return; }
-  grid.innerHTML = photos.map(p => `
+  grid.innerHTML = photos.map(p => {
+    const mediaUrl = p.thumbnailUrl || p.imageUrl || p.blobUrl || '';
+    const isVideo  = p.mediaType === 'video' || /\.(mp4|mov|webm)$/i.test(mediaUrl);
+    const thumb    = isVideo
+      ? `<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;font-size:2rem">🎬</div>`
+      : `<img src="${mediaUrl}" alt="${escapeHTML(p.title||'')}" loading="lazy" style="width:100%;height:100%;object-fit:cover"/>`;
+    return `
     <div class="pg-item" onclick="window.location.href='photo.html?id=${p.id}'">
-      <img src="${p.thumbnailUrl||p.imageUrl}" alt="${escapeHTML(p.title||'')}" loading="lazy"/>
+      ${thumb}
+      ${isVideo ? `<div style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);color:#fff;padding:2px 7px;border-radius:10px;font-size:.68rem;font-weight:700">VIDEO</div>` : ''}
       <div class="pg-overlay">
-        <span>❤️ ${formatNum(p.likes||0)}</span>
+        <span>❤️ ${formatNum(p.likeCount||p.likes||0)}</span>
         <span>💬 ${formatNum(p.commentCount||0)}</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── TABS ─────────────────────────────────────────
