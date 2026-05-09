@@ -262,9 +262,7 @@ function buildPhotoCard(photo) {
         </button>
       </div>
       <div class="card-body">
-        <div class="likes-count" id="likes-count-${photo.id}">${formatNum(photo.likes||0)} likes</div>
         <div class="card-caption">
-          <span class="cap-user">${escapeHTML(photo.creatorUsername||'Creator')}</span>
           ${parseHashtags(escapeHTML(photo.caption || ''))}
         </div>
         ${chips ? `<div class="people-tags-row">${chips}</div>` : ''}
