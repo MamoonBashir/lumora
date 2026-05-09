@@ -85,40 +85,19 @@ The system comprises a fully serverless REST API backend (Azure Functions v4, No
 
 ### 3.1 High-Level Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                         Client Browser                           │
-│              HTML + CSS + Vanilla JavaScript                     │
-│         (No framework — zero build step, instant deploy)         │
-└──────────────────────────┬───────────────────────────────────────┘
-                           │ HTTPS requests
-                           │
-┌──────────────────────────▼───────────────────────────────────────┐
-│           Azure Blob Storage — Static Website Hosting            │
-│    $web container · lumorastorage01.z1.web.core.windows.net      │
-│    Serves HTML, CSS, JS files globally at CDN edge               │
-└──────────────────────────┬───────────────────────────────────────┘
-                           │ REST API calls (fetch)
-                           │
-┌──────────────────────────▼───────────────────────────────────────┐
-│          Azure Functions App — lumora-api-mb                     │
-│          Node.js 18 · Functions v4 · Consumption Plan            │
-│          21 HTTP-triggered functions across 5 route groups       │
-│          /auth  /photos  /users  /stories                        │
-└──────────┬───────────────────────────┬───────────────────────────┘
-           │                           │
-           │ Cosmos DB SDK             │ Blob SDK (SAS URL gen)
-           │                           │
-┌──────────▼──────────┐   ┌────────────▼──────────────────────────┐
-│  Azure Cosmos DB     │   │  Azure Blob Storage                   │
-│  NoSQL · Serverless  │   │  container: "photos"                  │
-│  4 containers        │   │  Photos · Videos · Avatars · Stories  │
-│  users               │   │  Direct client upload via SAS URL     │
-│  photos              │   │  (browser → blob, bypasses Functions) │
-│  comments            │   └───────────────────────────────────────┘
-│  stories             │
-└─────────────────────┘
-```
+The diagram below illustrates the full system architecture. The draw.io source file is available at [`docs/architecture.drawio`](architecture.drawio) and can be opened at [diagrams.net](https://app.diagrams.net) for editing.
+
+![Lumora System Architecture](architecture.svg)
+
+**Component summary:**
+
+| Component | Technology | Role |
+|-----------|-----------|------|
+| Client Browser | HTML · CSS · Vanilla JS | UI, optimistic state, API calls |
+| Static Hosting | Azure Blob `$web` | Serves all frontend files |
+| REST API | Azure Functions v4 | All business logic, auth enforcement |
+| Database | Azure Cosmos DB Serverless | Metadata for users, photos, comments, stories |
+| Media Storage | Azure Blob `photos` | Binary files — photos, videos, avatars |
 
 ### 3.2 Media Upload Flow
 

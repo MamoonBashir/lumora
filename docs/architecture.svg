@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1160" height="720" viewBox="0 0 1160 720" xmlns="http://www.w3.org/2000/svg"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+    <!-- Arrow markers -->
+    <marker id="arr-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#0078D4"/>
+    </marker>
+    <marker id="arr-pink" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#e1306c"/>
+    </marker>
+    <marker id="arr-dark" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#005a9e"/>
+    </marker>
+    <marker id="arr-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+    </marker>
+    <marker id="arr-grey" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#888"/>
+    </marker>
+    <!-- Drop shadow -->
+    <filter id="shadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="2" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.18)"/>
+    </filter>
+  </defs>
+
+  <!-- ── BACKGROUND ─────────────────────────────────────── -->
+  <rect width="1160" height="720" fill="#f0f4f8" rx="16"/>
+
+  <!-- ── TITLE ─────────────────────────────────────────── -->
+  <text x="580" y="42" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a2e">
+    Lumora — Cloud-Native System Architecture on Microsoft Azure
+  </text>
+
+  <!-- ── AZURE CLOUD BOUNDARY ──────────────────────────── -->
+  <rect x="60" y="175" width="1040" height="500" rx="18" fill="rgba(0,120,212,0.04)"
+        stroke="#0078D4" stroke-width="2" stroke-dasharray="10,6"/>
+  <text x="86" y="200" font-size="13" font-weight="700" fill="#0078D4">☁  Microsoft Azure</text>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- BOXES                                                      -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+
+  <!-- CLIENT BROWSER -->
+  <rect x="405" y="65" width="270" height="82" rx="12" fill="#1e3a5f" filter="url(#shadow)"/>
+  <text x="540" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">🌐  Client Browser</text>
+  <text x="540" y="112" text-anchor="middle" font-size="11" fill="#a8c8f0">HTML · CSS · Vanilla JavaScript</text>
+  <text x="540" y="129" text-anchor="middle" font-size="11" fill="#a8c8f0">localStorage · fetch() · Optimistic UI</text>
+
+  <!-- AZURE BLOB — STATIC WEBSITE ($web) -->
+  <rect x="78" y="222" width="265" height="90" rx="12" fill="#0078D4" filter="url(#shadow)"/>
+  <text x="210" y="248" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Azure Blob Storage</text>
+  <text x="210" y="266" text-anchor="middle" font-size="11" fill="#d0e8ff">Static Website Hosting</text>
+  <text x="210" y="283" text-anchor="middle" font-size="10" fill="#b8d8ff">container: $web</text>
+  <text x="210" y="300" text-anchor="middle" font-size="9" fill="#99c8ff">lumorastorage01.z1.web.core.windows.net</text>
+
+  <!-- AZURE FUNCTIONS -->
+  <rect x="816" y="222" width="265" height="90" rx="12" fill="#0078D4" filter="url(#shadow)"/>
+  <text x="948" y="248" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Azure Functions App</text>
+  <text x="948" y="266" text-anchor="middle" font-size="11" fill="#d0e8ff">lumora-api-mb · Node.js 18</text>
+  <text x="948" y="283" text-anchor="middle" font-size="11" fill="#d0e8ff">Functions v4 · Consumption Plan</text>
+  <text x="948" y="300" text-anchor="middle" font-size="10" fill="#b8d8ff">21 HTTP route handlers</text>
+
+  <!-- JWT AUTH LAYER (sub-box under Functions) -->
+  <rect x="816" y="338" width="265" height="64" rx="10" fill="#006EAF"
+        stroke="#0090e0" stroke-width="1" stroke-dasharray="5,3" filter="url(#shadow)"/>
+  <text x="948" y="360" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">🔐  JWT Auth Layer</text>
+  <text x="948" y="377" text-anchor="middle" font-size="10" fill="#cce8ff">requireAuth() · requireCreator()</text>
+  <text x="948" y="393" text-anchor="middle" font-size="10" fill="#cce8ff">bcrypt · jsonwebtoken · JWT_SECRET</text>
+
+  <!-- AZURE COSMOS DB -->
+  <rect x="78" y="440" width="295" height="198" rx="12" fill="#005a9e" filter="url(#shadow)"/>
+  <text x="225" y="466" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Azure Cosmos DB</text>
+  <text x="225" y="484" text-anchor="middle" font-size="11" fill="#b8d8ff">NoSQL · Serverless · SQL API</text>
+  <line x1="95" y1="492" x2="356" y2="492" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <text x="100" y="511" font-size="11" fill="#cce8ff">📦  users      — partition: /id</text>
+  <text x="100" y="532" font-size="11" fill="#cce8ff">📦  photos     — partition: /id</text>
+  <text x="100" y="553" font-size="11" fill="#cce8ff">📦  comments  — partition: /photoId</text>
+  <text x="100" y="574" font-size="11" fill="#cce8ff">📦  stories    — partition: /id</text>
+  <line x1="95" y1="584" x2="356" y2="584" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <text x="225" y="601" text-anchor="middle" font-size="10" fill="#99c8ff">likedBy array · Ratings map</text>
+  <text x="225" y="617" text-anchor="middle" font-size="10" fill="#99c8ff">Atomic replace() for consistency</text>
+
+  <!-- AZURE BLOB — MEDIA STORAGE (photos container) -->
+  <rect x="816" y="440" width="265" height="198" rx="12" fill="#005a9e" filter="url(#shadow)"/>
+  <text x="948" y="466" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Azure Blob Storage</text>
+  <text x="948" y="484" text-anchor="middle" font-size="11" fill="#b8d8ff">Media File Storage</text>
+  <line x1="830" y1="492" x2="1070" y2="492" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <text x="948" y="515" text-anchor="middle" font-size="11" fill="#cce8ff">🖼  Photos &amp; Videos</text>
+  <text x="948" y="536" text-anchor="middle" font-size="11" fill="#cce8ff">👤  Avatars &amp; Cover Photos</text>
+  <text x="948" y="557" text-anchor="middle" font-size="11" fill="#cce8ff">📖  Story Media</text>
+  <line x1="830" y1="567" x2="1070" y2="567" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <text x="948" y="587" text-anchor="middle" font-size="10" fill="#99c8ff">container: photos</text>
+  <text x="948" y="604" text-anchor="middle" font-size="10" fill="#99c8ff">Public read · SAS write-only</text>
+  <text x="948" y="621" text-anchor="middle" font-size="10" fill="#99c8ff">Time-limited · Single-blob scoped</text>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- ARROWS                                                     -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+
+  <!-- 1. Browser → Static Site: HTTPS (serve static files) -->
+  <path d="M 480 147 L 480 175 L 210 175 L 210 222"
+        fill="none" stroke="#0078D4" stroke-width="2" marker-end="url(#arr-blue)"/>
+  <rect x="290" y="160" width="145" height="22" rx="4" fill="rgba(255,255,255,0.85)"/>
+  <text x="362" y="175" text-anchor="middle" font-size="10" font-weight="700" fill="#0078D4">HTTPS · Serve static files</text>
+
+  <!-- 2. Browser → Functions: REST API -->
+  <path d="M 600 147 L 600 175 L 948 175 L 948 222"
+        fill="none" stroke="#e1306c" stroke-width="2" marker-end="url(#arr-pink)"/>
+  <rect x="685" y="160" width="170" height="22" rx="4" fill="rgba(255,255,255,0.85)"/>
+  <text x="770" y="175" text-anchor="middle" font-size="10" font-weight="700" fill="#e1306c">REST API · Bearer &lt;token&gt;</text>
+
+  <!-- 3. Static Site ↔ Functions: browser JS fetches API -->
+  <path d="M 343 267 L 816 267"
+        fill="none" stroke="#666" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arr-grey)"/>
+  <rect x="455" y="254" width="170" height="20" rx="4" fill="rgba(255,255,255,0.85)"/>
+  <text x="540" y="268" text-anchor="middle" font-size="10" fill="#555">api.js fetch() calls from browser</text>
+
+  <!-- 4. Functions → JWT Layer -->
+  <path d="M 948 312 L 948 338"
+        fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-grey)"/>
+
+  <!-- 5. Functions → Cosmos DB -->
+  <path d="M 900 402 L 810 402 L 810 430 L 460 430 L 460 440"
+        fill="none" stroke="#005a9e" stroke-width="2" marker-end="url(#arr-dark)"/>
+  <rect x="560" y="416" width="170" height="20" rx="4" fill="rgba(255,255,255,0.85)"/>
+  <text x="645" y="430" text-anchor="middle" font-size="10" font-weight="700" fill="#005a9e">Cosmos DB SDK · read/write/patch</text>
+
+  <!-- 6. JWT Box → Blob Media: SAS URL generation -->
+  <path d="M 948 402 L 948 440"
+        fill="none" stroke="#005a9e" stroke-width="2" marker-end="url(#arr-dark)"/>
+  <rect x="955" y="412" width="100" height="18" rx="4" fill="rgba(255,255,255,0.85)"/>
+  <text x="1005" y="425" text-anchor="middle" font-size="9" font-weight="700" fill="#005a9e">SAS URL gen</text>
+
+  <!-- 7. Browser → Blob Media: Direct upload (green dashed) -->
+  <path d="M 675 106 L 1110 106 L 1110 539 L 1081 539"
+        fill="none" stroke="#22c55e" stroke-width="2" stroke-dasharray="8,4" marker-end="url(#arr-green)"/>
+  <rect x="1050" y="310" width="80" height="40" rx="5" fill="rgba(255,255,255,0.9)"/>
+  <text x="1090" y="326" text-anchor="middle" font-size="9" font-weight="700" fill="#22c55e">Direct</text>
+  <text x="1090" y="339" text-anchor="middle" font-size="9" font-weight="700" fill="#22c55e">upload</text>
+  <text x="1090" y="352" text-anchor="middle" font-size="9" fill="#22c55e">(SAS URL)</text>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- LEGEND                                                     -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <rect x="393" y="448" width="370" height="130" rx="10" fill="white"
+        stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+  <text x="578" y="469" text-anchor="middle" font-size="12" font-weight="700" fill="#333">Legend</text>
+
+  <!-- Legend items -->
+  <line x1="410" y1="485" x2="450" y2="485" stroke="#0078D4" stroke-width="2"/>
+  <polygon points="448,481 458,485 448,489" fill="#0078D4"/>
+  <text x="463" y="489" font-size="10" fill="#333">HTTPS — Serve static files from Blob CDN</text>
+
+  <line x1="410" y1="505" x2="450" y2="505" stroke="#e1306c" stroke-width="2"/>
+  <polygon points="448,501 458,505 448,509" fill="#e1306c"/>
+  <text x="463" y="509" font-size="10" fill="#333">REST API — Authenticated fetch() calls</text>
+
+  <line x1="410" y1="525" x2="450" y2="525" stroke="#005a9e" stroke-width="2"/>
+  <polygon points="448,521 458,525 448,529" fill="#005a9e"/>
+  <text x="463" y="529" font-size="10" fill="#333">Cosmos DB SDK — Read / Write / Patch</text>
+
+  <line x1="410" y1="545" x2="450" y2="545" stroke="#22c55e" stroke-width="2" stroke-dasharray="6,3"/>
+  <polygon points="448,541 458,545 448,549" fill="#22c55e"/>
+  <text x="463" y="549" font-size="10" fill="#333">Direct upload via SAS URL (bypasses API)</text>
+
+  <line x1="410" y1="565" x2="450" y2="565" stroke="#888" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="448,561 458,565 448,569" fill="#888"/>
+  <text x="463" y="569" font-size="10" fill="#333">Internal — JWT verify / Blob SDK</text>
+
+</svg>
