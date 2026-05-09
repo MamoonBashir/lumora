@@ -84,7 +84,7 @@
 
     <!-- Stories -->
     <div class="stories-bar" id="stories-bar">
-      <div class="story-item story-add" onclick="openYourStory()" style="cursor:pointer">
+      <div class="story-item story-add" id="story-add-btn" onclick="openYourStory()" style="cursor:pointer;display:none">
         <div class="story-ring"><div class="story-ring-inner">+</div></div>
         <span class="story-name">Your Story</span>
       </div>
@@ -110,10 +110,10 @@
 
     <!-- Story preview modal -->
     <div class="modal-overlay" id="story-modal" style="display:none" onclick="closeStoryModal(event)">
-      <div class="modal" style="max-width:420px;padding:0;overflow:hidden;border-radius:18px">
-        <div style="position:relative;background:#000;min-height:300px;display:flex;align-items:center;justify-content:center" id="story-preview-wrap">
-          <img id="story-preview-img" style="max-width:100%;max-height:500px;display:none"/>
-          <video id="story-preview-vid" style="max-width:100%;max-height:500px;display:none" controls></video>
+      <div class="modal" style="max-width:420px;padding:0;overflow:hidden;border-radius:18px;display:flex;flex-direction:column;grid-template-columns:none">
+        <div style="position:relative;background:#000;height:360px;display:flex;align-items:center;justify-content:center;overflow:hidden" id="story-preview-wrap">
+          <img id="story-preview-img" style="width:100%;height:100%;object-fit:contain;display:none"/>
+          <video id="story-preview-vid" style="width:100%;height:100%;object-fit:contain;display:none" controls></video>
           <div id="story-preview-placeholder" style="color:#666;font-size:.9rem">Select a photo or video</div>
         </div>
         <div style="padding:16px">
@@ -292,13 +292,25 @@ async function loadStories() {
   try {
     const data = await API.getStories();
     const list = data.stories || [];
-    document.getElementById('stories-list').innerHTML = list.map(s => `
-      <div class="story-item" onclick="viewStory('${escapeHTML(s.id)}')" style="cursor:pointer;flex-shrink:0">
-        <div class="story-ring${s.hasNew ? '' : ' story-ring-seen'}">
-          <img src="${s.avatarUrl}" alt="${escapeHTML(s.username)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover"/>
-        </div>
-        <span class="story-name">${escapeHTML(s.username)}</span>
-      </div>`).join('');
+    // Store stories for viewer
+    window._stories = list;
+    document.getElementById('stories-list').innerHTML = list.map(s => {
+      const avatar = s.avatarUrl ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(s.username||'U')}&background=e1306c&color=fff&size=56`;
+      const isVideo = s.blobUrl && /\.(mp4|mov|webm)$/i.test(s.blobUrl);
+      return `
+        <div class="story-item" onclick="viewStory('${escapeHTML(s.id)}')" style="cursor:pointer;flex-shrink:0">
+          <div class="story-ring" style="position:relative;overflow:hidden">
+            ${isVideo
+              ? `<video src="${escapeHTML(s.blobUrl)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover" muted></video>`
+              : `<img src="${escapeHTML(s.blobUrl||avatar)}" alt="${escapeHTML(s.username)}"
+                   onerror="this.src='${avatar}'"
+                   style="width:56px;height:56px;border-radius:50%;object-fit:cover"/>`
+            }
+          </div>
+          <span class="story-name">${escapeHTML(s.username)}</span>
+        </div>`;
+    }).join('');
   } catch {
     document.getElementById('stories-list').innerHTML = '';
   }
@@ -323,8 +335,17 @@ async function loadSuggestions() {
   }
 }
 
+// Show "Your Story" button only for creators
+if (isCreator()) {
+  document.getElementById('story-add-btn').style.display = '';
+}
+
 // Story functions
 function openYourStory() {
+  if (!isCreator()) {
+    showToast('Only creators can post stories.', 'info');
+    return;
+  }
   document.getElementById('story-file-input').click();
 }
 
@@ -355,14 +376,90 @@ function closeStoryModal(e) {
   document.getElementById('story-preview-placeholder').style.display = 'block';
 }
 
-function publishStory() {
-  document.getElementById('story-modal').style.display = 'none';
-  showToast('📸 Story shared!', 'success');
-  document.getElementById('story-file-input').value = '';
+async function publishStory() {
+  const file    = document.getElementById('story-file-input').files[0];
+  const caption = document.getElementById('story-caption-input').value.trim();
+  if (!file) { showToast('Please select a photo or video first.', 'error'); return; }
+
+  const btn = document.querySelector('[onclick="publishStory()"]');
+  btn.disabled = true;
+  btn.textContent = 'Uploading…';
+
+  try {
+    // 1. Get a SAS upload URL from the backend
+    const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
+    const { sasUrl, publicUrl: blobUrl } = await API.getSasUrl(ext);
+
+    // 2. Upload file directly to Azure Blob Storage
+    const uploadRes = await fetch(sasUrl, {
+      method: 'PUT',
+      headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type || 'application/octet-stream' },
+      body: file,
+    });
+    if (!uploadRes.ok) throw new Error('Blob upload failed');
+
+    // 3. Save story to Cosmos DB via API
+    await API.postStory(blobUrl, caption);
+
+    // 4. Reset modal
+    document.getElementById('story-modal').style.display = 'none';
+    document.getElementById('story-file-input').value = '';
+    document.getElementById('story-caption-input').value = '';
+    document.getElementById('story-preview-img').style.display    = 'none';
+    document.getElementById('story-preview-vid').style.display    = 'none';
+    document.getElementById('story-preview-placeholder').style.display = 'block';
+
+    showToast('📸 Story shared!', 'success');
+    loadStories(); // Refresh the stories bar
+  } catch(err) {
+    console.error('publishStory error:', err);
+    showToast('⚠️ Failed to share story. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Share Story';
+  }
 }
 
 function viewStory(id) {
-  showToast('👁 Story viewer coming soon!', 'info');
+  const stories = window._stories || [];
+  const s = stories.find(x => x.id === id);
+  if (!s) return;
+
+  const isVideo = s.blobUrl && /\.(mp4|mov|webm)$/i.test(s.blobUrl);
+  const avatar  = s.avatarUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(s.username||'U')}&background=e1306c&color=fff&size=40`;
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;display:flex;align-items:center;justify-content:center';
+  overlay.onclick = () => overlay.remove();
+
+  overlay.innerHTML = `
+    <div style="position:relative;max-width:400px;width:100%;margin:0 16px" onclick="event.stopPropagation()">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0 10px">
+        <img src="${avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #fff"/>
+        <div>
+          <div style="color:#fff;font-weight:700;font-size:.9rem">${escapeHTML(s.username)}</div>
+          <div style="color:rgba(255,255,255,.6);font-size:.75rem">${timeAgo(s.createdAt)}</div>
+        </div>
+        <button onclick="document.querySelector('[data-story-overlay]').remove()"
+                style="margin-left:auto;background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <!-- Media -->
+      <div style="border-radius:12px;overflow:hidden;background:#000;max-height:70vh;display:flex;align-items:center;justify-content:center">
+        ${isVideo
+          ? `<video src="${escapeHTML(s.blobUrl)}" controls autoplay style="width:100%;max-height:70vh;object-fit:contain"></video>`
+          : `<img src="${escapeHTML(s.blobUrl)}" style="width:100%;max-height:70vh;object-fit:contain"/>`
+        }
+      </div>
+      <!-- Caption -->
+      ${s.caption ? `<div style="color:#fff;padding:10px 4px;font-size:.9rem">${escapeHTML(s.caption)}</div>` : ''}
+    </div>`;
+
+  overlay.setAttribute('data-story-overlay', '1');
+  // Fix close button reference after DOM insert
+  overlay.querySelector('button').onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
 }
 
 // Role welcome banner

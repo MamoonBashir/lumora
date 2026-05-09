@@ -41,9 +41,10 @@ const API = (() => {
     // Ratings
     ratePhoto: (id, score) => req('POST', `/photos/${id}/rate`, { rating: score }),
 
-    // Saved
-    toggleSave:  (id) => req('POST', `/photos/${id}/save`),
-    getSaved:    ()   => req('GET',  '/photos/saved'),
+    // Saved / Liked collections
+    toggleSave:  (id)          => req('POST', `/photos/${id}/save`),
+    getSaved:    (params = '') => req('GET',  `/users/me/saved${params}`),
+    getLiked:    (params = '') => req('GET',  `/users/me/liked${params}`),
 
     // Explore
     search:   (q)    => req('GET', `/photos/search?q=${encodeURIComponent(q)}`),
@@ -51,11 +52,13 @@ const API = (() => {
     hashtag:  (tag)  => req('GET', `/photos/hashtag/${encodeURIComponent(tag)}`),
 
     // Profile
-    getProfile:    (userId) => req('GET',   `/users/${userId}`),
-    updateProfile: (data)   => req('PUT',   '/users/me', data),
+    getProfile:       (userId) => req('GET',  `/users/${userId}`),
+    updateProfile:    (data)   => req('PUT',  '/users/me', data),
+    getAvatarUploadUrl: ()     => req('POST', '/users/avatar-url'),
     getUserPhotos: (userId) => req('GET',   `/users/${userId}/photos`),
 
     // Stories
-    getStories: () => req('GET', '/stories'),
+    getStories:  ()                    => req('GET',  '/stories'),
+    postStory:   (blobUrl, caption)    => req('POST', '/stories', { blobUrl, caption }),
   };
 })();

@@ -29,6 +29,10 @@ function logout() {
   localStorage.removeItem('lm_user');
   window.location.href = 'index.html';
 }
+function toggleNavDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('nav-dropdown')?.classList.toggle('open');
+}
 
 /* ── NAVBAR INJECTION ───────────────────────────── */
 function injectNavbar(activePage) {
@@ -65,11 +69,31 @@ function injectNavbar(activePage) {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       </button>
       <button class="nav-icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
-      <a href="profile.html" title="Profile">
+      <div class="nav-avatar-wrap" id="nav-avatar-wrap" onclick="toggleNavDropdown(event)">
         <img class="nav-avatar" src="${avatarSrc}" alt="Profile"/>
-      </a>
+        <div class="nav-dropdown" id="nav-dropdown">
+          <a class="nav-dropdown-item" href="profile.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            ${isCreator() ? 'Creator Profile' : 'My Profile'}
+          </a>
+          <div class="nav-dropdown-divider"></div>
+          <button class="nav-dropdown-item nav-dropdown-signout" onclick="logout()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign Out
+          </button>
+        </div>
+      </div>
     </div>`;
   document.body.prepend(nav);
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('nav-avatar-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+      document.getElementById('nav-dropdown')?.classList.remove('open');
+    }
+  });
+
   initTheme();
 
   // Bottom nav (mobile)
@@ -196,6 +220,11 @@ const SaveState = {
   remove(id)  { delete this._data[id]; this._save(); },
   _save() { localStorage.setItem('lm_saves', JSON.stringify(this._data)); },
 };
+const RatingState = {
+  _data: JSON.parse(localStorage.getItem('lm_ratings') || '{}'),
+  get(id)        { return this._data[id] || 0; },
+  set(id, score) { this._data[id] = score; localStorage.setItem('lm_ratings', JSON.stringify(this._data)); },
+};
 
 /* ── PHOTO CARD BUILDER ─────────────────────────── */
 function buildPhotoCard(photo) {
@@ -212,8 +241,10 @@ function buildPhotoCard(photo) {
       <span>@${escapeHTML(p.username || p)}</span>
     </div>`).join('');
 
+  const userRating = RatingState.get(photo.id) || photo.userRating || 0;
+  const displayRating = userRating || photo.avgRating || 0;
   const stars = [1,2,3,4,5].map(n =>
-    `<span class="star${n <= (photo.avgRating||0) ? ' on' : ''}" onclick="ratePhoto('${photo.id}',${n})">★</span>`
+    `<span class="star${n <= displayRating ? ' on' : ''}" onclick="ratePhoto('${photo.id}',${n})">★</span>`
   ).join('');
 
   return `
@@ -223,7 +254,7 @@ function buildPhotoCard(photo) {
           <img src="${photo.creatorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(photo.creatorUsername||'U')}&background=e1306c&color=fff`}" alt=""/>
         </div>
         <div class="card-user-info">
-          <div class="card-username">${escapeHTML(photo.creatorUsername || 'Creator')}</div>
+          <div class="card-username">${escapeHTML(photo.creatorUsername || photo.creatorName || 'Creator')}</div>
           <div class="card-meta">
             ${photo.location ? `<span>📍 ${escapeHTML(photo.location)}</span> ·` : ''}
             <span>${timeAgo(photo.createdAt || new Date())}</span>
@@ -289,40 +320,91 @@ function doubleTap(id) {
   setTimeout(() => burst.classList.remove('pop'), 800);
 }
 
-function toggleLike(id, e) {
+async function toggleLike(id, e) {
   if (e) e.stopPropagation();
-  const liked = LikeState.toggle(id);
-  const btn = document.getElementById('like-btn-'+id);
-  const countEl = document.getElementById('like-count-'+id);
+  const btn    = document.getElementById('like-btn-'+id);
+  const countEl  = document.getElementById('like-count-'+id);
   const countEl2 = document.getElementById('likes-count-'+id);
+
+  // Optimistic update
+  const wasLiked = LikeState.isLiked(id);
+  const liked    = LikeState.toggle(id);
   if (!btn) return;
   btn.classList.toggle('liked', liked);
   const svg = btn.querySelector('svg');
   if (svg) svg.setAttribute('fill', liked ? 'currentColor' : 'none');
-  if (countEl) {
-    const n = parseInt(countEl.textContent.replace(/[km]/,'')) + (liked ? 1 : -1);
-    countEl.textContent = formatNum(Math.max(0, n));
-  }
-  if (countEl2) countEl2.textContent = (parseInt(countEl2.textContent) + (liked ? 1 : -1)) + ' likes';
+  const prevN = countEl ? parseInt(countEl.textContent.replace(/[^\d]/g,'')) || 0 : 0;
+  if (countEl)  countEl.textContent  = formatNum(Math.max(0, prevN + (liked ? 1 : -1)));
+  if (countEl2) countEl2.textContent = Math.max(0, prevN + (liked ? 1 : -1)) + ' likes';
   showToast(liked ? '❤️ Added to liked photos' : '🤍 Removed from liked photos', liked ? 'success' : 'info');
+
+  // Persist to backend
+  if (typeof API !== 'undefined') {
+    try {
+      const res = await API.toggleLike(id);
+      // Sync with authoritative server count & state
+      if (res && res.likeCount !== undefined) {
+        if (countEl)  countEl.textContent  = formatNum(res.likeCount);
+        if (countEl2) countEl2.textContent = formatNum(res.likeCount) + ' likes';
+      }
+      // If server disagrees with local state, correct it
+      if (res && res.liked !== liked) {
+        LikeState.set(id, res.liked);
+        btn.classList.toggle('liked', res.liked);
+        if (svg) svg.setAttribute('fill', res.liked ? 'currentColor' : 'none');
+      }
+    } catch(_) {
+      // Rollback on failure
+      LikeState.set(id, wasLiked);
+      btn.classList.toggle('liked', wasLiked);
+      if (svg) svg.setAttribute('fill', wasLiked ? 'currentColor' : 'none');
+      if (countEl)  countEl.textContent  = formatNum(prevN);
+      if (countEl2) countEl2.textContent = prevN + ' likes';
+    }
+  }
 }
 
-function toggleSave(id, e) {
+async function toggleSave(id, e) {
   if (e) e.stopPropagation();
-  const saved = SaveState.toggle(id);
   const btn = document.getElementById('save-btn-'+id);
   if (!btn) return;
+
+  // Optimistic update
+  const wasSaved = SaveState.isSaved(id);
+  const saved    = SaveState.toggle(id);
   btn.classList.toggle('saved', saved);
   const svg = btn.querySelector('svg');
   if (svg) svg.setAttribute('fill', saved ? 'currentColor' : 'none');
   showToast(saved ? '🔖 Saved to collection' : '📌 Removed from saved', saved ? 'success' : 'info');
+
+  // Persist to backend
+  if (typeof API !== 'undefined') {
+    try {
+      await API.toggleSave(id);
+    } catch(_) {
+      // Rollback on failure
+      SaveState.set(id, wasSaved);
+      btn.classList.toggle('saved', wasSaved);
+      if (svg) svg.setAttribute('fill', wasSaved ? 'currentColor' : 'none');
+    }
+  }
 }
 
-function ratePhoto(id, score) {
+async function ratePhoto(id, score) {
   const row = document.getElementById('stars-'+id);
   if (!row) return;
+  // Optimistic update + save to localStorage immediately
   row.querySelectorAll('.star').forEach((s,i) => s.classList.toggle('on', i < score));
+  RatingState.set(id, score);
   showToast(`⭐ Rated ${score} star${score>1?'s':''}`, 'success');
+  // Persist to backend
+  if (typeof API !== 'undefined') {
+    try {
+      await API.ratePhoto(id, score);
+    } catch(_) {
+      // Keep the local state even if API fails — it will sync next time
+    }
+  }
 }
 
 function sharePhoto(id) {
@@ -331,12 +413,21 @@ function sharePhoto(id) {
   showToast('🔗 Link copied to clipboard!', 'success');
 }
 
-function postComment(e, id) {
+async function postComment(e, id) {
   if (e.key !== 'Enter') return;
   const input = e.target;
-  if (!input.value.trim()) return;
-  showToast('💬 Comment posted!', 'success');
+  const text  = input.value.trim();
+  if (!text) return;
   input.value = '';
+  if (typeof API !== 'undefined') {
+    try {
+      await API.addComment(id, text);
+      // Update comment count in the card
+      const countEl = input.closest('.photo-card')?.querySelector('[id^="comment-count-"]');
+      if (countEl) countEl.textContent = parseInt(countEl.textContent||'0') + 1;
+    } catch(_) {}
+  }
+  showToast('💬 Comment posted!', 'success');
 }
 
 function openPhotoModal(id) {

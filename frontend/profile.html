@@ -148,9 +148,13 @@
   <div id="profile-content" style="display:none">
 
     <!-- Cover + card -->
+    <!-- Hidden file input for cover photo -->
+    <input type="file" id="cover-file-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadCoverPhoto(event)"/>
     <div class="cover-wrap" id="cover-wrap">
       <img id="cover-img" src="" alt="" style="display:none"/>
-      <button class="cover-edit-btn" id="cover-edit-btn" onclick="openEditModal()" style="display:none">✏️ Edit Cover</button>
+      <button class="cover-edit-btn" id="cover-edit-btn"
+              onclick="document.getElementById('cover-file-input').click()"
+              style="display:none">✏️ Edit Cover</button>
     </div>
     <div class="profile-card">
       <div class="profile-top">
@@ -240,10 +244,14 @@
     </div>
     <div class="edit-modal-body">
       <div class="edit-avatar-row">
-        <div class="edit-avatar-preview"><img id="edit-avatar-preview" src="" alt=""/></div>
+        <div class="edit-avatar-preview" style="cursor:pointer" onclick="document.getElementById('avatar-file-input').click()">
+          <img id="edit-avatar-preview" src="" alt=""/>
+        </div>
         <div>
-          <button class="edit-avatar-btn" onclick="showToast('Avatar upload coming soon!','info')">Change Photo</button>
+          <input type="file" id="avatar-file-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewAvatar(event)"/>
+          <button class="edit-avatar-btn" onclick="document.getElementById('avatar-file-input').click()">Change Photo</button>
           <div style="font-size:.76rem;color:var(--text-sub);margin-top:4px">JPG, PNG · Max 5MB</div>
+          <div id="avatar-upload-status" style="font-size:.76rem;color:var(--accent);margin-top:4px;display:none">📷 New photo selected</div>
         </div>
       </div>
       <div class="form-field">
@@ -374,7 +382,7 @@ function renderGrid(gridId, photos, emptyId) {
   const empty = document.getElementById(emptyId);
   if (!photos.length) { if(empty) empty.style.display = 'block'; return; }
   grid.innerHTML = photos.map(p => {
-    const mediaUrl = p.thumbnailUrl || p.imageUrl || p.blobUrl || '';
+    const mediaUrl = p.blobUrl || p.thumbnailUrl || p.imageUrl || '';
     const isVideo  = p.mediaType === 'video' || /\.(mp4|mov|webm)$/i.test(mediaUrl);
     const thumb    = isVideo
       ? `<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;font-size:2rem">🎬</div>`
@@ -401,29 +409,45 @@ function switchTab(tab) {
   if (tab === 'saved-tab') loadSavedProfile();
 }
 
-function loadLiked() {
-  const ids = Object.keys(JSON.parse(localStorage.getItem('lm_likes') || '{}'))
-    .filter(k => JSON.parse(localStorage.getItem('lm_likes') || '{}')[k]);
-  document.getElementById('tab-liked-count').textContent = ids.length;
-  document.getElementById('stat-likes').textContent = ids.length;
-  if (!ids.length) { document.getElementById('liked-empty').style.display = 'block'; return; }
-  document.getElementById('liked-grid').innerHTML = ids.map(id => `
-    <div class="pg-item" onclick="window.location.href='photo.html?id=${id}'">
-      <div style="width:100%;height:100%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:2rem">❤️</div>
-      <div class="pg-overlay"><span>Liked Photo</span></div>
-    </div>`).join('');
+async function loadLiked() {
+  try {
+    const data = await API.getLiked();
+    const photos = data.photos || [];
+    document.getElementById('tab-liked-count').textContent = photos.length;
+    document.getElementById('stat-likes').textContent = photos.length;
+    renderGrid('liked-grid', photos, 'liked-empty');
+  } catch {
+    // Fallback: show count from localStorage but no thumbnails
+    const ids = Object.keys(JSON.parse(localStorage.getItem('lm_likes') || '{}'))
+      .filter(k => JSON.parse(localStorage.getItem('lm_likes') || '{}')[k]);
+    document.getElementById('tab-liked-count').textContent = ids.length;
+    document.getElementById('stat-likes').textContent = ids.length;
+    if (!ids.length) { document.getElementById('liked-empty').style.display = 'block'; return; }
+    document.getElementById('liked-grid').innerHTML = ids.map(id => `
+      <div class="pg-item" onclick="window.location.href='photo.html?id=${id}'">
+        <div style="width:100%;height:100%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:2rem">❤️</div>
+        <div class="pg-overlay"><span>Liked Photo</span></div>
+      </div>`).join('');
+  }
 }
 
-function loadSavedProfile() {
-  const ids = Object.keys(JSON.parse(localStorage.getItem('lm_saves') || '{}'))
-    .filter(k => JSON.parse(localStorage.getItem('lm_saves') || '{}')[k]);
-  document.getElementById('tab-saved-count').textContent = ids.length;
-  if (!ids.length) { document.getElementById('saved-empty').style.display = 'block'; return; }
-  document.getElementById('saved-grid-profile').innerHTML = ids.map(id => `
-    <div class="pg-item" onclick="window.location.href='photo.html?id=${id}'">
-      <div style="width:100%;height:100%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:2rem">🔖</div>
-      <div class="pg-overlay"><span>Saved Photo</span></div>
-    </div>`).join('');
+async function loadSavedProfile() {
+  try {
+    const data = await API.getSaved();
+    const photos = data.photos || [];
+    document.getElementById('tab-saved-count').textContent = photos.length;
+    renderGrid('saved-grid-profile', photos, 'saved-empty');
+  } catch {
+    const ids = Object.keys(JSON.parse(localStorage.getItem('lm_saves') || '{}'))
+      .filter(k => JSON.parse(localStorage.getItem('lm_saves') || '{}')[k]);
+    document.getElementById('tab-saved-count').textContent = ids.length;
+    if (!ids.length) { document.getElementById('saved-empty').style.display = 'block'; return; }
+    document.getElementById('saved-grid-profile').innerHTML = ids.map(id => `
+      <div class="pg-item" onclick="window.location.href='photo.html?id=${id}'">
+        <div style="width:100%;height:100%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:2rem">🔖</div>
+        <div class="pg-overlay"><span>Saved Photo</span></div>
+      </div>`).join('');
+  }
 }
 
 // ── FOLLOW ────────────────────────────────────────
@@ -443,25 +467,100 @@ function openEditModal()  { document.getElementById('edit-modal').classList.add(
 function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }
 function closeEditOutside(e) { if (e.target.id === 'edit-modal') closeEditModal(); }
 
-async function saveProfile() {
-  const payload = {
-    displayName: document.getElementById('edit-name').value.trim(),
-    username:    document.getElementById('edit-username').value.trim(),
-    bio:         document.getElementById('edit-bio').value.trim(),
-    location:    document.getElementById('edit-location').value.trim(),
+// Show live preview when user picks a new avatar
+function previewAvatar(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('⚠️ File too large. Max 5MB.', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('edit-avatar-preview').src = ev.target.result;
+    document.getElementById('avatar-upload-status').style.display = 'block';
   };
+  reader.readAsDataURL(file);
+}
+
+async function saveProfile() {
+  const saveBtn = document.querySelector('[onclick="saveProfile()"]');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
   try {
+    const payload = {
+      displayName: document.getElementById('edit-name').value.trim(),
+      username:    document.getElementById('edit-username').value.trim(),
+      bio:         document.getElementById('edit-bio').value.trim(),
+      location:    document.getElementById('edit-location').value.trim(),
+    };
+
+    // Upload avatar if a new file was selected
+    const fileInput = document.getElementById('avatar-file-input');
+    const file = fileInput.files[0];
+    if (file) {
+      saveBtn.textContent = 'Uploading photo…';
+      const { sasUrl, publicUrl } = await API.getAvatarUploadUrl();
+      await fetch(sasUrl, {
+        method:  'PUT',
+        headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type || 'image/jpeg' },
+        body:    file,
+      });
+      payload.avatarUrl = publicUrl;
+    }
+
     await API.updateProfile(payload);
+
+    // Update localStorage so navbar/avatar reflects immediately
     const user = getUser() || {};
     Object.assign(user, payload);
     localStorage.setItem('lm_user', JSON.stringify(user));
+
+    // Update visible elements on the page
     closeEditModal();
     showToast('✅ Profile updated!', 'success');
     document.getElementById('profile-name').textContent = payload.displayName || payload.username;
-    document.getElementById('profile-bio').textContent  = payload.bio;
+    document.getElementById('profile-bio').textContent  = payload.bio || '';
+    if (payload.avatarUrl) {
+      document.getElementById('profile-avatar').src = payload.avatarUrl;
+      document.getElementById('profile-avatar').style.display = 'block';
+      document.getElementById('avatar-bg').style.display = 'none';
+    }
   } catch(e) {
     console.error('saveProfile error:', e);
     showToast('⚠️ Failed to save profile. Please try again.', 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Changes';
+  }
+}
+
+async function uploadCoverPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const btn = document.getElementById('cover-edit-btn');
+  btn.textContent = 'Uploading…';
+  btn.disabled = true;
+  try {
+    const { sasUrl, publicUrl } = await API.getAvatarUploadUrl();
+    await fetch(sasUrl, {
+      method:  'PUT',
+      headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type || 'image/jpeg' },
+      body:    file,
+    });
+    await API.updateProfile({ coverUrl: publicUrl });
+    const img = document.getElementById('cover-img');
+    img.src = publicUrl;
+    img.style.display = 'block';
+    const user = getUser() || {};
+    user.coverUrl = publicUrl;
+    localStorage.setItem('lm_user', JSON.stringify(user));
+    showToast('✅ Cover photo updated!', 'success');
+  } catch(err) {
+    console.error('uploadCoverPhoto error:', err);
+    showToast('⚠️ Failed to update cover photo.', 'error');
+  } finally {
+    btn.textContent = '✏️ Edit Cover';
+    btn.disabled = false;
+    e.target.value = '';
   }
 }
 

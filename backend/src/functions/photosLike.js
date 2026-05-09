@@ -21,22 +21,27 @@ app.http('photosLike', {
     const user  = userRes.resource;
     if (!photo) throw Object.assign(new Error('Photo not found'), { status: 404 });
 
-    const liked    = (user.likedPhotos || []).includes(photoId);
-    const delta    = liked ? -1 : 1;
-    const newCount = Math.max(0, (photo.likeCount || 0) + delta);
+    // Use photo.likedBy as the single source of truth — no cross-doc consistency issues
+    const likedBy      = photo.likedBy || [];
+    const alreadyLiked = likedBy.includes(claims.id);
 
-    await containers.photos().item(photoId, photoId).patch([
-      { op: 'set', path: '/likeCount', value: newCount },
-    ]);
+    const newLikedBy = alreadyLiked
+      ? likedBy.filter(uid => uid !== claims.id)
+      : [...likedBy, claims.id];
 
-    const newLikes = liked
+    // Replace the photo document with updated likedBy + likeCount
+    photo.likedBy   = newLikedBy;
+    photo.likeCount = newLikedBy.length;
+    await containers.photos().item(photoId, photoId).replace(photo);
+
+    // Also keep user.likedPhotos in sync (used by profile/saved pages)
+    const newUserLikes = alreadyLiked
       ? (user.likedPhotos || []).filter(id => id !== photoId)
       : [...(user.likedPhotos || []), photoId];
-
     await containers.users().item(claims.id, claims.id).patch([
-      { op: 'set', path: '/likedPhotos', value: newLikes },
+      { op: 'set', path: '/likedPhotos', value: newUserLikes },
     ]);
 
-    return ok({ liked: !liked, likeCount: newCount });
+    return ok({ liked: !alreadyLiked, likeCount: photo.likeCount });
   }),
 });

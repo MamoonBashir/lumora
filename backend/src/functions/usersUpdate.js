@@ -13,7 +13,7 @@ app.http('usersUpdate', {
     const body   = await request.json();
 
     // Whitelist of updatable fields
-    const allowed = ['displayName', 'bio', 'location', 'avatarUrl', 'email', 'phone'];
+    const allowed = ['displayName', 'bio', 'location', 'avatarUrl', 'coverUrl', 'email', 'phone'];
     const patches = [];
 
     for (const field of allowed) {

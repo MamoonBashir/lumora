@@ -20,8 +20,10 @@ app.http('photosById', {
       // (omit entirely if not logged in so frontend keeps localStorage fallback)
       try {
         const claims = requireAuth(request);
+        // Read user only for savedPhotos (saves aren't stored in the photo doc)
         const { resource: user } = await containers.users().item(claims.id, claims.id).read();
-        photo.userLiked  = (user?.likedPhotos || []).includes(id);
+        // userLiked from photo.likedBy — always consistent with likeCount
+        photo.userLiked  = (photo.likedBy     || []).includes(claims.id);
         photo.userSaved  = (user?.savedPhotos  || []).includes(id);
         photo.userRating = (photo.ratings      || {})[claims.id] || 0;
       } catch (_) { /* not logged in — leave userLiked/userSaved/userRating absent */ }

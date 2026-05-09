@@ -1227,8 +1227,7 @@ async function doLogin() {
     localStorage.setItem('lm_token', data.token);
     localStorage.setItem('lm_user',  JSON.stringify(data.user));
     toast(`Signed in as ${data.user.role === 'creator' ? '📸 Creator' : '👤 Consumer'}. Redirecting…`, 'success');
-    const dest = data.user.role === 'creator' ? 'creator.html' : 'feed.html';
-    setTimeout(() => { window.location.href = dest; }, 1000);
+    setTimeout(() => { window.location.href = 'feed.html'; }, 1000);
   } catch(e) {
     toast(e.message || 'Invalid credentials', 'error');
     btn.classList.remove('loading'); btn.disabled = false;

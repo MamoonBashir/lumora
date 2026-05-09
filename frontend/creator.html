@@ -295,6 +295,21 @@
             <div class="form-hint" id="caption-tags"></div>
           </div>
           <div class="form-field">
+            <label class="form-label">Category <span style="color:var(--accent)">*</span></label>
+            <select class="form-input" id="f-category" style="cursor:pointer">
+              <option value="">— Select a category —</option>
+              <option value="travel">✈️ Travel</option>
+              <option value="nature">🌿 Nature</option>
+              <option value="urban">🏙️ Urban</option>
+              <option value="portrait">🧑‍🎨 Portrait</option>
+              <option value="abstract">🎨 Abstract</option>
+              <option value="food">🍕 Food</option>
+              <option value="architecture">🏛️ Architecture</option>
+              <option value="night">🌙 Night</option>
+              <option value="sport">⚽ Sport</option>
+            </select>
+          </div>
+          <div class="form-field">
             <label class="form-label">Location</label>
             <input class="form-input" id="f-location" type="text" placeholder="📍 Add a location…"/>
           </div>
@@ -637,7 +652,7 @@ async function publishPhoto() {
       description: caption,
       blobUrl:     publicUrl,
       mediaType:   mediaType || (isVideo ? 'video' : 'image'),
-      category:    selectedFilter && selectedFilter !== 'Original' ? selectedFilter.toLowerCase() : 'abstract',
+      category:    document.getElementById('f-category').value || 'abstract',
       hashtags:    hashtagMatches,
     });
 

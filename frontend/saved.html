@@ -662,7 +662,7 @@ function renderSaved(photos, reset) {
 }
 
 function buildSavedCard(p) {
-  const imgSrc = p.cdnUrl || p.thumbnailUrl || p.imageUrl || '';
+  const imgSrc = p.blobUrl || p.cdnUrl || p.thumbnailUrl || p.imageUrl || '';
   const title  = escapeHTML(p.title || 'Untitled');
   const likes  = formatNum(p.likeCount || 0);
   const rating = p.avgRating ? `⭐ ${parseFloat(p.avgRating).toFixed(1)}` : '';
@@ -686,7 +686,7 @@ function buildSavedCard(p) {
 }
 
 function buildListItem(p) {
-  const imgSrc = p.cdnUrl || p.thumbnailUrl || p.imageUrl || '';
+  const imgSrc = p.blobUrl || p.cdnUrl || p.thumbnailUrl || p.imageUrl || '';
   const title  = escapeHTML(p.title || 'Untitled');
   const likes  = formatNum(p.likeCount || 0);
   const time   = p.savedAt ? timeAgo(p.savedAt) : (p.createdAt ? timeAgo(p.createdAt) : '');
