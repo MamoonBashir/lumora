@@ -13,20 +13,24 @@ app.http('photos', {
 
     /* ── GET /api/photos ── */
     if (request.method === 'GET') {
-      const filter = request.query.get('filter') || 'all';
+      // Support both ?filter= (feed) and ?category= (explore) + ?sort= (explore)
+      const category = request.query.get('category') || request.query.get('filter') || 'all';
+      const sort   = request.query.get('sort') || 'newest';
       const page   = parseInt(request.query.get('page')  || '1');
       const limit  = parseInt(request.query.get('limit') || '10');
       const offset = (page - 1) * limit;
 
-      const categories = ['travel', 'nature', 'urban', 'portrait', 'abstract'];
-      let query  = 'SELECT * FROM c ORDER BY c.createdAt DESC OFFSET @offset LIMIT @limit';
-      let params = [{ name: '@offset', value: offset }, { name: '@limit', value: limit + 1 }];
+      const validCategories = ['travel','nature','urban','portrait','abstract','food','architecture','night','sport'];
+      const orderBy = sort === 'trending' || category === 'trending'
+        ? 'c.likeCount DESC' : 'c.createdAt DESC';
 
-      if (categories.includes(filter)) {
-        query  = 'SELECT * FROM c WHERE c.category = @cat ORDER BY c.createdAt DESC OFFSET @offset LIMIT @limit';
-        params = [{ name: '@cat', value: filter }, ...params];
-      } else if (filter === 'trending') {
-        query  = 'SELECT * FROM c ORDER BY c.likeCount DESC OFFSET @offset LIMIT @limit';
+      let query, params;
+      if (validCategories.includes(category)) {
+        query  = `SELECT * FROM c WHERE c.category = @cat ORDER BY ${orderBy} OFFSET @offset LIMIT @limit`;
+        params = [{ name: '@cat', value: category }, { name: '@offset', value: offset }, { name: '@limit', value: limit + 1 }];
+      } else {
+        query  = `SELECT * FROM c ORDER BY ${orderBy} OFFSET @offset LIMIT @limit`;
+        params = [{ name: '@offset', value: offset }, { name: '@limit', value: limit + 1 }];
       }
 
       const { resources } = await containers.photos().items
@@ -35,7 +39,7 @@ app.http('photos', {
 
       const hasMore = resources.length > limit;
       const photos  = hasMore ? resources.slice(0, limit) : resources;
-      return ok({ photos, hasMore, page });
+      return ok({ photos, hasMore, page, total: photos.length });
     }
 
     /* ── POST /api/photos ── */
@@ -44,7 +48,7 @@ app.http('photos', {
       const { title, description, blobUrl, category, hashtags, mediaType } = await request.json();
       if (!blobUrl) return err('blobUrl is required');
 
-      const validCategories = ['travel', 'nature', 'urban', 'portrait', 'abstract'];
+      const validCategories = ['travel','nature','urban','portrait','abstract','food','architecture','night','sport'];
       const cat = validCategories.includes(category) ? category : 'abstract';
 
       // Detect media type from extension if not provided

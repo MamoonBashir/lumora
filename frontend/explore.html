@@ -272,8 +272,9 @@ async function runExplore(append = false) {
     });
     const data = await API.getPhotos('?' + params.toString());
     renderExploreGrid(data.photos || [], append);
-    const total = data.total || 0;
-    document.getElementById('results-count').innerHTML = `<strong>${total.toLocaleString()}</strong> photos found`;
+    const total = (data.photos || []).length;
+    const label = total === 0 ? 'No photos found' : `<strong>${total.toLocaleString()}</strong> photo${total !== 1 ? 's' : ''} found`;
+    document.getElementById('results-count').innerHTML = label;
     document.getElementById('explore-load-more').style.display = data.hasMore ? 'block' : 'none';
   } catch {
     renderExploreGrid([], append);
@@ -298,9 +299,13 @@ function renderExploreGrid(photos, append) {
     card.onclick = () => openModal(p);
     card.innerHTML = `
       <div class="masonry-card-img">
-        <img src="${p.imageUrl||p.thumbnailUrl}" alt="${escapeHTML(p.title||'')}" loading="lazy"/>
+        ${p.mediaType === 'video'
+          ? `<video src="${p.blobUrl}" muted autoplay loop playsinline style="width:100%;display:block;object-fit:cover;max-height:320px;background:#000"></video>
+             <div style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);color:#fff;padding:2px 7px;border-radius:10px;font-size:.68rem;font-weight:700">🎬 VIDEO</div>`
+          : `<img src="${p.blobUrl||p.imageUrl||p.thumbnailUrl}" alt="${escapeHTML(p.title||'')}" loading="lazy"/>`
+        }
         <div class="masonry-card-overlay">
-          <div class="mc-stat">❤️ ${formatNum(p.likes||0)}</div>
+          <div class="mc-stat">❤️ ${formatNum(p.likeCount||p.likes||0)}</div>
           <div class="mc-stat">💬 ${formatNum(p.commentCount||0)}</div>
         </div>
         <button style="position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.7rem" onclick="event.stopPropagation();toggleSave('${p.id}',event)">${saved?'🔖':'🏷️'}</button>
@@ -325,11 +330,11 @@ function loadMoreExplore() {
 // ── MODAL ─────────────────────────────────────────
 function openModal(photo) {
   currentModalId = photo.id;
-  document.getElementById('modal-img').src    = photo.imageUrl || photo.thumbnailUrl;
+  document.getElementById('modal-img').src    = photo.blobUrl || photo.imageUrl || photo.thumbnailUrl || '';
   document.getElementById('modal-title').textContent = photo.title || 'Untitled';
-  document.getElementById('modal-meta').textContent  = [photo.location, photo.creatorUsername].filter(Boolean).join(' · ');
-  document.getElementById('modal-caption').innerHTML = parseHashtags(escapeHTML(photo.caption||''));
-  document.getElementById('modal-like-count').textContent = formatNum(photo.likes||0);
+  document.getElementById('modal-meta').textContent  = [photo.location, photo.creatorName||photo.creatorUsername].filter(Boolean).join(' · ');
+  document.getElementById('modal-caption').innerHTML = parseHashtags(escapeHTML(photo.caption||photo.description||''));
+  document.getElementById('modal-like-count').textContent = formatNum(photo.likeCount||photo.likes||0);
   document.getElementById('modal-fullpage-link').href = `photo.html?id=${photo.id}`;
   const liked = LikeState.isLiked(photo.id);
   const btn = document.getElementById('modal-like-btn');
